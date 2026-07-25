@@ -39,7 +39,7 @@ if 'search_results' not in st.session_state: st.session_state.search_results = [
 if 't1_opts' not in st.session_state: st.session_state.t1_opts = []
 if 't2_opts' not in st.session_state: st.session_state.t2_opts = []
 
-# --- בניית ה-CSS הדינמי המותאם למובייל ולמסגרת הבהיר/כהה ---
+# --- בניית ה-CSS הדינמי המותאם למובייל ולסידור כפתורי העיצוב בשורה ---
 is_light = (st.session_state.theme == "בהיר ☀️")
 
 bg_color = "#f8f9fa" if is_light else "#0e1117"
@@ -144,15 +144,23 @@ summary .material-icons {{
     margin-top: 4px;
 }}
 
-/* מסגרת תחום סגורה מסביב לכפתורי מצב יום/לילה */
+/* מסגרת תחום סגורה מסביב לכפתורי מצב יום/לילה וכפיית שורה אופקית */
 .theme-box-wrapper {{
     border: {box_border};
     background-color: {box_bg};
     border-radius: 16px;
-    padding: 10px 15px;
+    padding: 8px 12px;
     display: inline-block;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    margin-bottom: 15px;
+    margin-bottom: 10px;
+    direction: rtl;
+}}
+.theme-box-wrapper div[role="radiogroup"] {{
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 15px !important;
+    align-items: center !important;
+    justify-content: center !important;
 }}
 
 /* עיצוב כפתורי ניווט בסגנון מודרני */
