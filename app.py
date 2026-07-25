@@ -39,7 +39,7 @@ if 'search_results' not in st.session_state: st.session_state.search_results = [
 if 't1_opts' not in st.session_state: st.session_state.t1_opts = []
 if 't2_opts' not in st.session_state: st.session_state.t2_opts = []
 
-# --- בניית ה-CSS הדינמי המותאם למובייל ולמיקום הכפתורים ---
+# --- בניית ה-CSS הדינמי המותאם למובייל וללא גלילה אופקית ---
 is_light = (st.session_state.theme == "בהיר ☀️")
 
 bg_color = "#f8f9fa" if is_light else "#0e1117"
@@ -59,6 +59,8 @@ html, body, [data-testid="stAppViewContainer"], .main {{
     overflow-x: hidden !important;
     max-width: 100vw !important;
     box-sizing: border-box;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
 }}
 
 /* הידוק עמודות כך שהכפתורים יעמדו מימין למשחק בשורה אחת */
@@ -118,23 +120,23 @@ summary .material-icons {{
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 15px;
-    margin-bottom: 25px;
-    margin-top: 5px;
+    gap: 10px;
+    margin-bottom: 5px;
+    margin-top: 0px;
     direction: rtl;
     flex-wrap: wrap;
     text-align: center;
 }}
 .app-icon-box {{
-    width: 55px;
-    height: 55px;
+    width: 40px;
+    height: 40px;
     background: linear-gradient(135deg, #007bff, #00d2ff);
-    border-radius: 16px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.2em;
-    box-shadow: 0 6px 15px rgba(0,123,255,0.4);
+    font-size: 1.5em;
+    box-shadow: 0 4px 10px rgba(0,123,255,0.4);
     transform: rotate(-10deg);
 }}
 .app-text-box {{
@@ -143,19 +145,19 @@ summary .material-icons {{
     text-align: right;
 }}
 .app-text-main {{
-    font-size: 2.1em;
+    font-size: 1.5em;
     font-weight: 900;
     color: {text_color} !important;
     line-height: 1;
     letter-spacing: -1px;
 }}
 .app-text-sub {{
-    font-size: 1em;
+    font-size: 0.75em;
     font-weight: 700;
     color: #007bff;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
     text-transform: uppercase;
-    margin-top: 4px;
+    margin-top: 2px;
 }}
 
 /* עיצוב כפתורי ניווט מותאמים למסך מגע */
@@ -163,19 +165,19 @@ div.row-widget.stRadio > div {{
     flex-direction: row;
     justify-content: center;
     background-color: {radio_bg};
-    padding: 5px;
-    border-radius: 25px;
-    gap: 4px;
+    padding: 3px;
+    border-radius: 20px;
+    gap: 2px;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
     flex-wrap: wrap;
 }}
 div.row-widget.stRadio > div > label {{
     background-color: transparent !important;
-    padding: 6px 12px !important;
-    border-radius: 20px !important;
+    padding: 4px 10px !important;
+    border-radius: 15px !important;
     cursor: pointer;
     font-weight: 700;
-    font-size: 0.85em;
+    font-size: 0.75em;
     transition: all 0.3s ease;
     text-align: center;
 }}
@@ -191,7 +193,7 @@ div.row-widget.stRadio > div > label:hover {{
 .vs-badge {{
     text-align: center;
     margin: 5px 0;
-    font-size: 1.3em;
+    font-size: 1.2em;
     font-weight: 900;
     color: {'#adb5bd' if is_light else '#6c757d'};
 }}
@@ -199,28 +201,28 @@ div.row-widget.stRadio > div > label:hover {{
 /* כרטיסיות מוקטנות ומותאמות למובייל */
 .stat-card, .match-card {{
     background: {card_bg};
-    border-radius: 12px;
+    border-radius: 10px;
     color: {text_color} !important;
     box-shadow: {shadow_base};
     border: {card_border};
-    padding: 8px;
-    margin-bottom: 6px;
+    padding: 6px;
+    margin-bottom: 4px;
     width: 100% !important;
     box-sizing: border-box !important;
     overflow-wrap: break-word;
 }}
 .stat-card {{
     text-align: center;
-    padding: 15px 10px;
+    padding: 12px 8px;
 }}
 .stat-value {{
-    font-size: 2em;
+    font-size: 1.6em;
     font-weight: 900;
-    margin: 6px 0;
+    margin: 4px 0;
     color: #007bff !important;
 }}
 .stat-title {{
-    font-size: 0.9em;
+    font-size: 0.75em;
     color: {'#7f8c8d' if is_light else '#adb5bd'} !important;
     font-weight: 700;
     text-transform: uppercase;
@@ -228,11 +230,11 @@ div.row-widget.stRadio > div > label:hover {{
 
 /* כפתורים רוחביים נוחים */
 .stButton > button {{
-    border-radius: 8px !important;
+    border-radius: 6px !important;
     font-weight: bold !important;
     width: 100% !important;
-    min-height: 32px !important;
-    font-size: 0.75em !important;
+    min-height: 28px !important;
+    font-size: 0.7em !important;
 }}
 
 input {{
@@ -350,14 +352,14 @@ def match_card_html(date, competition, stadium, home_team, away_team, score, hom
     tc_inline = "#333333 !important" if is_lht else "white !important"
     
     img_league = f"<img src='{league_logo}' width='12' style='vertical-align: middle; margin-left: 2px; border-radius: 50%;'>" if league_logo else ""
-    img_home = f"<img src='{home_logo}' width='20' style='vertical-align: middle; margin-left: 3px; flex-shrink: 0;'>" if home_logo else ""
-    img_away = f"<img src='{away_logo}' width='20' style='vertical-align: middle; margin-right: 3px; flex-shrink: 0;'>" if away_logo else ""
+    img_home = f"<img src='{home_logo}' width='18' style='vertical-align: middle; margin-left: 3px; flex-shrink: 0;'>" if home_logo else ""
+    img_away = f"<img src='{away_logo}' width='18' style='vertical-align: middle; margin-right: 3px; flex-shrink: 0;'>" if away_logo else ""
     
-    att_tag = "<span style='background: #28a745; color: white !important; padding: 1px 4px; border-radius: 6px; font-size: 0.6em; font-weight: bold; margin-right: 3px;'>🎟️ יציע</span>" if attended else ""
+    att_tag = "<span style='background: #28a745; color: white !important; padding: 1px 4px; border-radius: 6px; font-size: 0.6em; font-weight: bold; margin-right: 3px;'>🏟️ אצטדיון</span>" if attended else ""
     
     return f"""
     <div class='match-card'>
-        <div style='text-align: center; color: #888 !important; font-size: 0.65em; font-weight: bold; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'>
+        <div style='text-align: center; color: #888 !important; font-size: 0.65em; font-weight: bold; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'>
             📅 <span style='color: {tc_inline};'>{date}</span> | 🏆 {img_league} {competition} | 🏟️ {stadium} {att_tag}
         </div>
         <div style='text-align: center; font-size: 0.85em; display: flex; align-items: center; justify-content: center; color: {tc_inline}; font-weight: 900; flex-wrap: nowrap; gap: 3px;'>
@@ -583,29 +585,20 @@ def render_match_details(match_id, theme_name):
     </div>
     """, unsafe_allow_html=True)
 
-# --- פריסת תפריט כפתור העיצוב ---
-col_empty, col_theme = st.columns([9, 1])
-with col_theme:
-    st.radio(
-        "עיצוב:", 
-        ["כהה 🌙", "בהיר ☀️"], 
-        index=0 if st.session_state.theme == "כהה 🌙" else 1, 
-        horizontal=True, 
-        label_visibility="collapsed", 
-        key="theme_radio", 
-        on_change=change_theme
-    )
-
-# --- הלוגו ---
-st.markdown("""
-<div class="app-logo-wrapper">
-    <div class="app-icon-box">⚽</div>
-    <div class="app-text-box">
-        <div class="app-text-main">יומן המשחקים</div>
-        <div class="app-text-sub">הכדורגל שלי</div>
+# --- שורת כותרת עליונה משולבת (שם האתר, מצב בהיר/כהה, וניווט) באותו מסך ללא גלילה לצדדים ---
+col_logo, col_theme_btn = st.columns([7, 3])
+with col_logo:
+    st.markdown("""
+    <div class="app-logo-wrapper">
+        <div class="app-icon-box">⚽</div>
+        <div>
+            <div class="app-text-main">יומן המשחקים</div>
+            <div class="app-text-sub">הכדורגל שלי</div>
+        </div>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+with col_theme_btn:
+    st.radio("עיצוב:", ["כהה 🌙", "בהיר ☀️"], index=0 if st.session_state.theme == "כהה 🌙" else 1, horizontal=True, label_visibility="collapsed", key="theme_radio", on_change=change_theme)
 
 nav_choice = st.radio("ניווט", ["📋 יומן המשחקים", "🔍 חיפוש והוספת משחקים", "📊 סטטיסטיקות אישיות"], index=1, horizontal=True, label_visibility="collapsed")
 st.write("---")
@@ -670,15 +663,13 @@ if nav_choice == "📋 יומן המשחקים":
             st.write("---")
 
         with st.container():
-            st.markdown("<h4 style='text-align: right; color: gray !important; font-size: 1em;'>חיפוש וסינון ביומן 🔍</h4>", unsafe_allow_html=True)
-            col_search, col_filter = st.columns(2)
-            
+            # שורת חיפוש וסינון למעלה באותו מסך ללא גלילה
+            col_search, col_filter = st.columns([6, 4])
             with col_search:
-                search_query = st.text_input("חיפוש קבוצה...", "")
-            
+                search_query = st.text_input("חיפוש קבוצה...", "", placeholder="קבוצה...", label_visibility="collapsed")
             with col_filter:
                 all_comps = list(set([m.get('תחרות', '') for m in st.session_state.saved_matches if m.get('תחרות', '')]))
-                selected_comp = st.selectbox("תחרות:", ["הכל"] + all_comps)
+                selected_comp = st.selectbox("תחרות:", ["הכל"] + all_comps, label_visibility="collapsed")
         
         st.write("---")
         
@@ -713,7 +704,6 @@ if nav_choice == "📋 יומן המשחקים":
             col_card, col_action = st.columns([10, 2])
             
             with col_action:
-                st.write("")
                 new_attended = st.checkbox("🏟️", value=attended, key=f"att_{match_id}", help="הייתי באצטדיון")
                 if new_attended != attended:
                     update_attendance_in_file(match_id, new_attended)
@@ -729,7 +719,7 @@ if nav_choice == "📋 יומן המשחקים":
                     
                     if attended:
                         st.divider()
-                        st.markdown("<h4 style='text-align: center; color: gray !important; font-weight: 900; font-size: 1em;'>📸 זיכרון מהיציע</h4>", unsafe_allow_html=True)
+                        st.markdown("<h4 style='text-align: center; color: gray !important; font-weight: 900; font-size: 1em;'>📸 זיכרון מהאצטדיון</h4>", unsafe_allow_html=True)
                         img_path = os.path.join(UPLOAD_DIR, f"{match_id}.png")
                         
                         if os.path.exists(img_path):
@@ -978,8 +968,8 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         with col4:
             st.markdown(f"""
             <div class='stat-card'>
-                <div class='stat-title'>משחקי יציע</div>
-                <div class='stat-value' style='font-size: 1.4em; color: #ffc107 !important;'>🎟️ {total_attended}</div>
+                <div class='stat-title'>משחקי אצטדיון</div>
+                <div class='stat-value' style='font-size: 1.4em; color: #ffc107 !important;'>🏟️ {total_attended}</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -989,10 +979,10 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         df_export = pd.DataFrame(saved)
         csv_export = df_export.to_csv(index=False).encode('utf-8-sig')
         
-        wa_text = f"""⚽ *הסטטיסטיקות שלי ביציע ובספה!* ⚽
+        wa_text = f"""⚽ *הסטטיסטיקות שלי באצטדיון ובספה!* ⚽
         
 🏟️ משחקים שצפיתי: {total_matches}
-🎟️ משחקים מהיציע: {total_attended}
+🏟️ משחקים באצטדיון: {total_attended}
 🥅 סך הכל שערים שראיתי: {total_goals} ({avg_goals} למשחק!)
 🛡️ הקבוצה הנצפית ביותר: {top_team}
 📍 האצטדיון שלי: {top_stadium}
