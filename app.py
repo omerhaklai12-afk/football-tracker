@@ -39,7 +39,7 @@ if 'search_results' not in st.session_state: st.session_state.search_results = [
 if 't1_opts' not in st.session_state: st.session_state.t1_opts = []
 if 't2_opts' not in st.session_state: st.session_state.t2_opts = []
 
-# --- בניית ה-CSS הדינמי המותאם למובייל ולמסגרת הבהיר/כהה ---
+# --- בניית ה-CSS הדינמי המותאם למובייל ---
 is_light = (st.session_state.theme == "בהיר ☀️")
 
 bg_color = "#f8f9fa" if is_light else "#0e1117"
@@ -49,8 +49,7 @@ card_border = "1px solid #e9ecef" if is_light else "1px solid rgba(255,255,255,0
 radio_bg = "#e9ecef" if is_light else "rgba(255, 255, 255, 0.05)"
 radio_hover = "#dee2e6" if is_light else "rgba(255, 255, 255, 0.1)"
 shadow_base = "0 4px 6px rgba(0,0,0,0.05)" if is_light else "0 4px 15px rgba(0,0,0,0.3)"
-box_border = "2px solid #333333" if is_light else "2px solid rgba(255, 255, 255, 0.2)"
-box_bg = "#ffffff" if is_light else "#161b22"
+shadow_hover = "0 10px 20px rgba(0,0,0,0.1)" if is_light else "0 10px 25px rgba(0,0,0,0.5)"
 
 st.markdown(f"""
 <style>
@@ -142,18 +141,6 @@ summary .material-icons {{
     letter-spacing: 2px;
     text-transform: uppercase;
     margin-top: 4px;
-}}
-
-/* מסגרת מעוצבת מסביב לכפתורי מצב יום/לילה */
-.theme-box-wrapper {{
-    border: {box_border};
-    background-color: {box_bg};
-    border-radius: 16px;
-    padding: 8px 12px;
-    display: inline-block;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    margin-bottom: 10px;
-    direction: rtl;
 }}
 
 /* עיצוב כפתורי ניווט בסגנון מודרני */
@@ -587,7 +574,7 @@ def render_match_details(match_id, theme_name):
     </div>
     """, unsafe_allow_html=True)
 
-# --- פריסת תפריט כפתור העיצוב (ללא מסגרת מעל) ---
+# --- פריסת תפריט כפתור העיצוב ---
 col_empty, col_theme = st.columns([9, 1])
 with col_theme:
     st.radio(
@@ -729,7 +716,7 @@ if nav_choice == "📋 יומן המשחקים":
                 if new_attended != attended:
                     update_attendance_in_file(match_id, new_attended)
                     if new_attended:
-                        st.balloons() # הפעלת קונפטי/בלונים כשמסמנים שהיית באצטדיון
+                        st.balloons()
                     st.rerun()
 
             with col_match:
@@ -880,6 +867,7 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
             match_id = match['fixture']['id'] 
             
             home_logo = match['teams']['home']['logo']
+            away_logo = match['teams']['home']['logo'] # תיקון קל
             away_logo = match['teams']['away']['logo']
             league_logo = match['league']['logo'] 
             
@@ -931,11 +919,27 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         teams_counter = Counter()
         stadiums_counter = Counter()
         comps_counter = Counter()
+        months_counter = Counter()
+        scorers_counter = Counter()
+        total_red_cards = 0
         team_logos = {}
         
+        hebrew_months = {
+            1: "ינואר", 2: "פברואר", 3: "מרץ", 4: "אפריל", 5: "מאי", 6: "יוני",
+            7: "יולי", 8: "אוגוסט", 9: "ספטמבר", 10: "אוקטובר", 11: "נובמבר", 12: "דצמבר"
+        }
+
         for match in saved:
             if match.get('הייתי_במשחק', False):
                 total_attended += 1
+                
+            date_str = match.get('תאריך', '')[:10]
+            try:
+                dt_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                m_name = hebrew_months.get(dt_obj.month, str(dt_obj.month))
+                months_counter[m_name] += 1
+            except:
+                pass
                 
             score_str = str(match.get('תוצאה', '0 - 0'))
             try:
@@ -962,14 +966,34 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             
             comp = match.get('תחרות', '')
             if comp and comp != 'None': comps_counter[comp] += 1
+
+            # שליפת אירועים (שערים וכרטיסים אדומים) עבור מלכי השערים והאדומים
+            m_id = match.get('ID_משחק')
+            if m_id:
+                details = get_fixture_details(m_id)
+                if details and details.get('results', 0) > 0:
+                    match_obj = details['response'][0]
+                    for ev in match_obj.get('events', []):
+                        ev_type = ev.get('type')
+                        ev_detail = str(ev.get('detail', ''))
+                        # ספירת שערים למלכי השערים (לא שער עצמי)
+                        if ev_type in ['Goal', 'Penalty'] and ev_detail != 'Own Goal':
+                            p_name = ev.get('player', {}).get('name')
+                            if p_name:
+                                scorers_counter[p_name] += 1
+                        # ספירת כרטיסים אדומים בלבד
+                        if ev_type == 'Card' and 'Red' in ev_detail:
+                            total_red_cards += 1
             
         avg_goals = round(total_goals / total_matches, 2) if total_matches > 0 else 0
         top_team = teams_counter.most_common(1)[0][0] if teams_counter else "אין נתונים"
         top_team_logo = team_logos.get(top_team, "")
         top_team_display = f"<img src='{top_team_logo}' width='28' style='vertical-align: middle; margin-left: 6px;'> {top_team}" if top_team_logo else top_team
         
+        top_month = months_counter.most_common(1)[0][0] if months_counter else "אין נתונים"
+        top_scorer = scorers_counter.most_common(1)[0] if scorers_counter else None
+        
         top_stadium = stadiums_counter.most_common(1)[0][0] if stadiums_counter else "אין נתונים"
-        top_comp = comps_counter.most_common(1)[0][0] if comps_counter else "אין נתונים"
         
         col1, col2 = st.columns(2)
         
@@ -1006,6 +1030,31 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             </div>
             """, unsafe_allow_html=True)
 
+        # שורת סטטיסטיקות חדשות: חודש שיא, מלך שערים וכרטיסים אדומים
+        col5, col6, col7 = st.columns(3)
+        with col5:
+            st.markdown(f"""
+            <div class='stat-card'>
+                <div class='stat-title'>חודש שיא בצפייה</div>
+                <div class='stat-value' style='font-size: 1.3em;'>📅 {top_month}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col6:
+            scorer_text = f"{top_scorer[0]} ({top_scorer[1]} שערים)" if top_scorer else "אין נתונים"
+            st.markdown(f"""
+            <div class='stat-card'>
+                <div class='stat-title'>מלך השערים שלך</div>
+                <div class='stat-value' style='font-size: 1.1em;'>👑 {scorer_text}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col7:
+            st.markdown(f"""
+            <div class='stat-card'>
+                <div class='stat-title'>כרטיסים אדומים</div>
+                <div class='stat-value' style='font-size: 1.6em; color: #dc3545 !important;'>🟥 {total_red_cards}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
         st.write("---")
         st.markdown("<h4 style='text-align: center; color: gray !important; margin-bottom: 15px; font-weight: 900; font-size: 1.1em;'>📤 ייצוא ושיתוף</h4>", unsafe_allow_html=True)
         
@@ -1018,6 +1067,8 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
 🎟️ משחקים מהיציע: {total_attended}
 🥅 סך הכל שערים שראיתי: {total_goals} ({avg_goals} למשחק!)
 🛡️ הקבוצה הנצפית ביותר: {top_team}
+📅 חודש השיא שלי: {top_month}
+🟥 כרטיסים אדומים שראיתי: {total_red_cards}
 📍 האצטדיון שלי: {top_stadium}
 
 הופק באמצעות "יומן משחקי הכדורגל שלי" 🏆"""
