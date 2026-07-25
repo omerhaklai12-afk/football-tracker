@@ -39,7 +39,7 @@ if 'search_results' not in st.session_state: st.session_state.search_results = [
 if 't1_opts' not in st.session_state: st.session_state.t1_opts = []
 if 't2_opts' not in st.session_state: st.session_state.t2_opts = []
 
-# --- בניית ה-CSS הדינמי המותאם למובייל ---
+# --- בניית ה-CSS הדינמי המותאם למובייל ולמסגרת הבהיר/כהה ---
 is_light = (st.session_state.theme == "בהיר ☀️")
 
 bg_color = "#f8f9fa" if is_light else "#0e1117"
@@ -49,7 +49,8 @@ card_border = "1px solid #e9ecef" if is_light else "1px solid rgba(255,255,255,0
 radio_bg = "#e9ecef" if is_light else "rgba(255, 255, 255, 0.05)"
 radio_hover = "#dee2e6" if is_light else "rgba(255, 255, 255, 0.1)"
 shadow_base = "0 4px 6px rgba(0,0,0,0.05)" if is_light else "0 4px 15px rgba(0,0,0,0.3)"
-shadow_hover = "0 10px 20px rgba(0,0,0,0.1)" if is_light else "0 10px 25px rgba(0,0,0,0.5)"
+box_border = "2px solid #333333" if is_light else "2px solid rgba(255, 255, 255, 0.2)"
+box_bg = "#ffffff" if is_light else "#161b22"
 
 st.markdown(f"""
 <style>
@@ -141,6 +142,18 @@ summary .material-icons {{
     letter-spacing: 2px;
     text-transform: uppercase;
     margin-top: 4px;
+}}
+
+/* מסגרת מעוצבת מסביב לכפתורי מצב יום/לילה */
+.theme-box-wrapper {{
+    border: {box_border};
+    background-color: {box_bg};
+    border-radius: 16px;
+    padding: 8px 12px;
+    display: inline-block;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    margin-bottom: 10px;
+    direction: rtl;
 }}
 
 /* עיצוב כפתורי ניווט בסגנון מודרני */
@@ -574,7 +587,7 @@ def render_match_details(match_id, theme_name):
     </div>
     """, unsafe_allow_html=True)
 
-# --- פריסת תפריט כפתור העיצוב הרגיל (ללא מסגרת) ---
+# --- פריסת תפריט כפתור העיצוב (ללא מסגרת מעל) ---
 col_empty, col_theme = st.columns([9, 1])
 with col_theme:
     st.radio(
@@ -715,6 +728,8 @@ if nav_choice == "📋 יומן המשחקים":
                 new_attended = st.checkbox("הייתי באצטדיון 🏟️", value=attended, key=f"att_{match_id}")
                 if new_attended != attended:
                     update_attendance_in_file(match_id, new_attended)
+                    if new_attended:
+                        st.balloons() # הפעלת קונפטי/בלונים כשמסמנים שהיית באצטדיון
                     st.rerun()
 
             with col_match:
