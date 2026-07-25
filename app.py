@@ -7,7 +7,6 @@ from deep_translator import GoogleTranslator
 from datetime import datetime
 from collections import Counter
 
-# הדבק כאן רק את המפתח שלך בתוך המרכאות
 API_KEY = "7b8cd7941e0c008eb154b4ca358d3e72"
 CSV_FILE = "my_games.csv"
 THEME_FILE = "theme.txt"
@@ -40,7 +39,7 @@ if 'search_results' not in st.session_state: st.session_state.search_results = [
 if 't1_opts' not in st.session_state: st.session_state.t1_opts = []
 if 't2_opts' not in st.session_state: st.session_state.t2_opts = []
 
-# --- בניית ה-CSS הדינמי המקצועי ---
+# --- בניית ה-CSS הדינמי המותאם למובייל ---
 is_light = (st.session_state.theme == "בהיר ☀️")
 
 bg_color = "#f8f9fa" if is_light else "#0e1117"
@@ -55,6 +54,12 @@ shadow_hover = "0 10px 20px rgba(0,0,0,0.1)" if is_light else "0 10px 25px rgba(
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap');
+
+/* מניעת גלילה אופקית וחסימת חריגות רוחב במסכים צרים */
+html, body, [data-testid="stAppViewContainer"] {{
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+}}
 
 /* החלת הפונט רק על טקסטים ולא על אייקונים */
 html, body, div, p, label, h1, h2, h3, h4, h5, h6, li, button, input, span {{
@@ -94,32 +99,28 @@ summary .material-icons {{
     visibility: hidden !important;
 }}
 
-/* עיצוב הלוגו החדש */
+/* עיצוב הלוגו */
 .app-logo-wrapper {{
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 25px;
-    margin-bottom: 45px;
-    margin-top: 15px;
+    gap: 20px;
+    margin-bottom: 35px;
+    margin-top: 10px;
     direction: rtl;
+    flex-wrap: wrap;
 }}
 .app-icon-box {{
-    width: 80px;
-    height: 80px;
+    width: 65px;
+    height: 65px;
     background: linear-gradient(135deg, #007bff, #00d2ff);
-    border-radius: 22px;
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 3em;
-    box-shadow: 0 10px 25px rgba(0,123,255,0.4);
+    font-size: 2.5em;
+    box-shadow: 0 8px 20px rgba(0,123,255,0.4);
     transform: rotate(-10deg);
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    cursor: default;
-}}
-.app-icon-box:hover {{
-    transform: rotate(0deg) scale(1.1);
 }}
 .app-text-box {{
     display: flex;
@@ -127,19 +128,19 @@ summary .material-icons {{
     text-align: right;
 }}
 .app-text-main {{
-    font-size: 3.2em;
+    font-size: 2.5em;
     font-weight: 900;
     color: {text_color} !important;
     line-height: 1;
     letter-spacing: -1px;
 }}
 .app-text-sub {{
-    font-size: 1.3em;
+    font-size: 1.1em;
     font-weight: 700;
     color: #007bff;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
     text-transform: uppercase;
-    margin-top: 5px;
+    margin-top: 4px;
 }}
 
 /* עיצוב כפתורי ניווט בסגנון מודרני */
@@ -151,13 +152,15 @@ div.row-widget.stRadio > div {{
     border-radius: 30px;
     gap: 5px;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    flex-wrap: wrap;
 }}
 div.row-widget.stRadio > div > label {{
     background-color: transparent !important;
-    padding: 10px 25px !important;
-    border-radius: 25px !important;
+    padding: 8px 18px !important;
+    border-radius: 22px !important;
     cursor: pointer;
     font-weight: 700;
+    font-size: 0.95em;
     transition: all 0.3s ease;
 }}
 div.row-widget.stRadio > div > label[data-checked="true"] {{
@@ -171,59 +174,46 @@ div.row-widget.stRadio > div > label:hover {{
 /* עיצובים מיוחדים לאזור החיפוש */
 .vs-badge {{
     text-align: center;
-    margin-top: 2px;
-    font-size: 1.8em;
+    margin-top: 5px;
+    font-size: 1.5em;
     font-weight: 900;
     color: {'#adb5bd' if is_light else '#6c757d'};
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
 }}
 
 /* אנימציות לכרטיסיות הסטטיסטיקה והמשחקים */
 .stat-card, .match-card {{
     background: {card_bg};
-    border-radius: 20px;
+    border-radius: 16px;
     color: {text_color} !important;
     box-shadow: {shadow_base};
     border: {card_border};
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    padding: 15px;
+    margin-bottom: 12px;
+    width: 100%;
+    box-sizing: border-box;
 }}
 .stat-card {{
-    padding: 25px 20px;
     text-align: center;
-    margin-bottom: 20px;
+    padding: 20px 15px;
 }}
-.stat-card:hover, .match-card:hover {{
-    transform: translateY(-5px);
-    box-shadow: {shadow_hover};
-}}
-.match-card {{
-    padding: 20px;
-    margin-bottom: 10px;
-}}
-
 .stat-value {{
-    font-size: 2.8em;
+    font-size: 2.2em;
     font-weight: 900;
-    margin: 10px 0;
+    margin: 8px 0;
     color: #007bff !important;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
 }}
 .stat-title {{
-    font-size: 1.1em;
+    font-size: 1em;
     color: {'#7f8c8d' if is_light else '#adb5bd'} !important;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
 }}
 
 /* כפתורים משודרגים */
 .stButton > button {{
     border-radius: 12px !important;
     font-weight: bold !important;
-    transition: all 0.2s ease !important;
-}}
-.stButton > button:hover {{
-    transform: scale(1.02);
+    width: 100% !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -336,27 +326,27 @@ def match_card_html(date, competition, stadium, home_team, away_team, score, hom
     is_lht = (theme_name == "בהיר ☀️")
     tc_inline = "#333333 !important" if is_lht else "white !important"
     
-    img_league = f"<img src='{league_logo}' width='22' style='vertical-align: middle; margin-left: 5px; border-radius: 50%;'>" if league_logo else ""
-    img_home = f"<img src='{home_logo}' width='45' style='vertical-align: middle; margin-left: 12px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));'>" if home_logo else ""
-    img_away = f"<img src='{away_logo}' width='45' style='vertical-align: middle; margin-right: 12px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));'>" if away_logo else ""
+    img_league = f"<img src='{league_logo}' width='20' style='vertical-align: middle; margin-left: 4px; border-radius: 50%;'>" if league_logo else ""
+    img_home = f"<img src='{home_logo}' width='35' style='vertical-align: middle; margin-left: 8px;'>" if home_logo else ""
+    img_away = f"<img src='{away_logo}' width='35' style='vertical-align: middle; margin-right: 8px;'>" if away_logo else ""
     
-    att_tag = "&nbsp;&nbsp;<span style='background: linear-gradient(45deg, #28a745, #20c997); color: white !important; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 900; box-shadow: 0 2px 5px rgba(40,167,69,0.3);'>🎟️ באצטדיון</span>" if attended else ""
+    att_tag = "<br><span style='background: linear-gradient(45deg, #28a745, #20c997); color: white !important; padding: 2px 8px; border-radius: 15px; font-size: 0.75em; font-weight: 900; display: inline-block; margin-top: 4px;'>🎟️ באצטדיון</span>" if attended else ""
     
     return f"""
     <div class='match-card'>
-        <div style='text-align: center; color: #888 !important; font-size: 1em; font-weight: bold; margin-bottom: 15px;'>
+        <div style='text-align: center; color: #888 !important; font-size: 0.85em; font-weight: bold; margin-bottom: 10px;'>
             📅 <span style='color: {tc_inline};'>{date}</span> &nbsp;|&nbsp; 🏆 {img_league} {competition} &nbsp;|&nbsp; 🏟️ {stadium} {att_tag}
         </div>
-        <div style='text-align: center; font-size: 1.6em; display: flex; align-items: center; justify-content: center; color: {tc_inline}; font-weight: 900;'>
-            {img_home} <span style='margin-left: 15px;'>{home_team}</span> 
-            <span style='background: linear-gradient(135deg, #007bff, #0056b3); color: white !important; padding: 6px 20px; border-radius: 25px; font-weight: 900; margin: 0 20px; box-shadow: 0 4px 10px rgba(0,123,255,0.3); letter-spacing: 2px;'>{score}</span> 
-            <span style='margin-right: 15px;'>{away_team}</span> {img_away}
+        <div style='text-align: center; font-size: 1.2em; display: flex; align-items: center; justify-content: center; color: {tc_inline}; font-weight: 900; flex-wrap: wrap; gap: 5px;'>
+            {img_home} <span>{home_team}</span> 
+            <span style='background: linear-gradient(135deg, #007bff, #0056b3); color: white !important; padding: 4px 15px; border-radius: 20px; font-weight: 900; margin: 0 10px; font-size: 0.9em; letter-spacing: 1px;'>{score}</span> 
+            <span>{away_team}</span> {img_away}
         </div>
     </div>
     """
 
 def get_colored_marker(text, bg_marker):
-    return f"<div style='text-align: center;'><span style='background-color: {bg_marker}; color: white !important; border-radius: 20px; padding: 6px 20px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.15);'>{text}</span></div><br>"
+    return f"<div style='text-align: center;'><span style='background-color: {bg_marker}; color: white !important; border-radius: 20px; padding: 5px 15px; font-weight: bold; font-size: 0.9em; box-shadow: 0 2px 5px rgba(0,0,0,0.15);'>{text}</span></div><br>"
 
 def render_match_details(match_id, theme_name):
     is_lht = (theme_name == "בהיר ☀️")
@@ -381,30 +371,28 @@ def render_match_details(match_id, theme_name):
     home_has_red = any(ev['type'] == 'Card' and 'Red' in ev['detail'] and ev['team']['id'] == home_id for ev in events)
     away_has_red = any(ev['type'] == 'Card' and 'Red' in ev['detail'] and ev['team']['id'] == away_id for ev in events)
     
-    home_rc_badge = "<span style='font-size: 0.5em; vertical-align: middle; margin-left: 10px;'>🟥</span>" if home_has_red else ""
-    away_rc_badge = "<span style='font-size: 0.5em; vertical-align: middle; margin-right: 10px;'>🟥</span>" if away_has_red else ""
+    home_rc_badge = "<span style='font-size: 0.5em; vertical-align: middle; margin-left: 5px;'>🟥</span>" if home_has_red else ""
+    away_rc_badge = "<span style='font-size: 0.5em; vertical-align: middle; margin-right: 5px;'>🟥</span>" if away_has_red else ""
     
     c_country = full_match['league']['country']
     c_league = full_match['league']['name']
     c_round = full_match['league'].get('round', '')
     
-    round_html = f"<div style='text-align: center; color: #007bff !important; font-size: 0.95em; font-weight: 700; margin-top: -5px;'>{c_round}</div>" if c_round else ""
-    st.markdown(f"<div style='text-align: center; color: gray !important; font-size: 1.1em; font-weight: bold;'>{c_country}, {c_league}</div>{round_html}<br>", unsafe_allow_html=True)
+    round_html = f"<div style='text-align: center; color: #007bff !important; font-size: 0.9em; font-weight: 700; margin-top: -3px;'>{c_round}</div>" if c_round else ""
+    st.markdown(f"<div style='text-align: center; color: gray !important; font-size: 1em; font-weight: bold;'>{c_country}, {c_league}</div>{round_html}<br>", unsafe_allow_html=True)
     
     h1, h2, h3 = st.columns([1, 1, 1])
     with h1:
-        st.markdown(f"<div style='text-align: center;'><img src='{full_match['teams']['home']['logo']}' width='100' style='filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));'><br><b style='font-size: 1.4em; color: {tc} !important;'>{full_match['teams']['home']['name']}</b></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: center;'><img src='{full_match['teams']['home']['logo']}' width='70' style='filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));'><br><b style='font-size: 1.1em; color: {tc} !important;'>{full_match['teams']['home']['name']}</b></div>", unsafe_allow_html=True)
     with h2:
         score_display = f"{home_rc_badge}{full_match['goals']['home']} - {full_match['goals']['away']}{away_rc_badge}"
-        st.markdown(f"<div style='text-align: center;'><h1 style='font-size: 4em; margin: 0; color: #007bff !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.1);'>{score_display}</h1><span style='color: gray !important; font-weight: bold; text-transform: uppercase;'>הסתיים</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: center;'><h1 style='font-size: 2.8em; margin: 0; color: #007bff !important;'>{score_display}</h1><span style='color: gray !important; font-weight: bold; font-size: 0.8em; text-transform: uppercase;'>הסתיים</span></div>", unsafe_allow_html=True)
     with h3:
-        st.markdown(f"<div style='text-align: center;'><img src='{full_match['teams']['away']['logo']}' width='100' style='filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));'><br><b style='font-size: 1.4em; color: {tc} !important;'>{full_match['teams']['away']['name']}</b></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: center;'><img src='{full_match['teams']['away']['logo']}' width='70' style='filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));'><br><b style='font-size: 1.1em; color: {tc} !important;'>{full_match['teams']['away']['name']}</b></div>", unsafe_allow_html=True)
     
     st.divider()
+    st.markdown("<h4 style='text-align: center; margin-bottom: 20px; color: gray !important; font-weight: 900;'>אירועי המשחק</h4>", unsafe_allow_html=True)
     
-    st.markdown("<h3 style='text-align: center; margin-bottom: 25px; color: gray !important; font-weight: 900;'>אירועי המשחק</h3>", unsafe_allow_html=True)
-    
-    # כולל מפורשות החטאות פנדלים בסינון אירועים רלוונטיים
     important_events = [
         ev for ev in events 
         if ev['type'] == 'Goal' 
@@ -454,7 +442,7 @@ def render_match_details(match_id, theme_name):
             time_el = ev['time']['elapsed']
             time_ex = ev['time']['extra']
             if time_ex:
-                time_display = f"<span style='background-color: rgba(253, 126, 20, 0.15); color: #e67e22 !important; padding: 3px 8px; border-radius: 8px;'>{time_el}+{time_ex}'</span>"
+                time_display = f"<span style='background-color: rgba(253, 126, 20, 0.15); color: #e67e22 !important; padding: 2px 6px; border-radius: 6px; font-size: 0.9em;'>{time_el}+{time_ex}'</span>"
             else:
                 time_display = f"<span style='color: {tc} !important; font-weight: bold;'>{time_el}'</span>"
             
@@ -466,10 +454,9 @@ def render_match_details(match_id, theme_name):
             
             if ev_type == "Goal" or ev_type == "Penalty" or "Miss" in ev_detail:
                 if ev_detail == "Penalty":
-                    icon = "<span style='display:inline-block; background-color: #28a745; border-radius: 50%; padding: 2px 5px; color: white !important; font-size: 0.9em; box-shadow: 1px 1px 3px rgba(0,0,0,0.4); text-align: center;'><b>P✅</b></span>"
+                    icon = "<span style='display:inline-block; background-color: #28a745; border-radius: 50%; padding: 2px 4px; color: white !important; font-size: 0.8em;'><b>P✅</b></span>"
                 elif "Miss" in ev_detail:
-                    # הנה האייקון שביקשת: כדור אדום עגול עם P ואיקס קטן לידו
-                    icon = "<span style='display:inline-block; background-color: #dc3545; border-radius: 50%; width: 22px; height: 22px; line-height: 22px; color: white !important; font-size: 0.85em; box-shadow: 1px 1px 3px rgba(0,0,0,0.4); text-align: center; margin: 0 2px;'><b>P</b></span><span style='font-size: 0.75em;'>❌</span>"
+                    icon = "<span style='display:inline-block; background-color: #dc3545; border-radius: 50%; width: 20px; height: 20px; line-height: 20px; color: white !important; font-size: 0.8em; text-align: center; margin: 0 2px;'><b>P</b></span><span style='font-size: 0.7em;'>❌</span>"
                 elif ev_detail == "Own Goal":
                     icon = "🔴⚽"
                 else:
@@ -482,16 +469,16 @@ def render_match_details(match_id, theme_name):
             e1, e2, e3 = st.columns([3, 1, 3])
             if is_home:
                 with e1:
-                    assist_text = f"<br><small style='color: gray !important;'>{assist}</small>" if assist and ev_type == 'Goal' else ""
-                    st.markdown(f"<div style='text-align: left; line-height: 1.2; color: {tc} !important; font-size: 1.1em;'><b>{player}</b> {icon}{assist_text}</div>", unsafe_allow_html=True)
+                    assist_text = f"<br><small style='color: gray !important; font-size: 0.85em;'>{assist}</small>" if assist and ev_type == 'Goal' else ""
+                    st.markdown(f"<div style='text-align: left; line-height: 1.2; color: {tc} !important; font-size: 0.95em;'><b>{player}</b> {icon}{assist_text}</div>", unsafe_allow_html=True)
                 with e2:
                     st.markdown(f"<div style='text-align: center;'>{time_display}</div>", unsafe_allow_html=True)
             else:
                 with e2:
                     st.markdown(f"<div style='text-align: center;'>{time_display}</div>", unsafe_allow_html=True)
                 with e3:
-                    assist_text = f"<br><small style='color: gray !important;'>{assist}</small>" if assist and ev_type == 'Goal' else ""
-                    st.markdown(f"<div style='text-align: right; line-height: 1.2; color: {tc} !important; font-size: 1.1em;'>{icon} <b>{player}</b>{assist_text}</div>", unsafe_allow_html=True)
+                    assist_text = f"<br><small style='color: gray !important; font-size: 0.85em;'>{assist}</small>" if assist and ev_type == 'Goal' else ""
+                    st.markdown(f"<div style='text-align: right; line-height: 1.2; color: {tc} !important; font-size: 0.95em;'>{icon} <b>{player}</b>{assist_text}</div>", unsafe_allow_html=True)
 
     if status_short == 'PEN':
         st.markdown(pen_str, unsafe_allow_html=True)
@@ -508,10 +495,8 @@ def render_match_details(match_id, theme_name):
     st.markdown(ht_str, unsafe_allow_html=True)
     draw_events(first_half)
 
-    st.markdown("<div style='text-align: center; font-size: 2.5em; color: #28a745 !important; margin-top: 15px; text-shadow: 0px 2px 4px rgba(0,0,0,0.2);'>⏱️</div>", unsafe_allow_html=True)
     st.divider()
-    
-    st.markdown("<h3 style='text-align: center; margin-bottom: 20px; color: gray !important; font-weight: 900;'>סטטיסטיקות</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; margin-bottom: 15px; color: gray !important; font-weight: 900;'>סטטיסטיקות</h3>", unsafe_allow_html=True)
     stats = full_match.get('statistics', [])
     if len(stats) == 2:
         home_stats = {s['type']: s['value'] for s in stats[0]['statistics']}
@@ -532,9 +517,9 @@ def render_match_details(match_id, theme_name):
             h_num = get_stat_num(h_str)
             a_num = get_stat_num(a_str)
             
-            win_h_style = "background: linear-gradient(135deg, #007bff, #00d2ff); padding: 5px 20px; border-radius: 15px; color: white !important; font-weight: 900; box-shadow: 0 3px 6px rgba(0,0,0,0.2);"
-            win_a_style = "background: linear-gradient(135deg, #28a745, #20c997); padding: 5px 20px; border-radius: 15px; color: white !important; font-weight: 900; box-shadow: 0 3px 6px rgba(0,0,0,0.2);"
-            neutral_style = "padding: 5px 20px; color: gray !important; font-weight: bold; background-color: rgba(128,128,128,0.1); border-radius: 15px;"
+            win_h_style = "background: linear-gradient(135deg, #007bff, #00d2ff); padding: 4px 15px; border-radius: 12px; color: white !important; font-weight: 900; font-size: 0.9em;"
+            win_a_style = "background: linear-gradient(135deg, #28a745, #20c997); padding: 4px 15px; border-radius: 12px; color: white !important; font-weight: 900; font-size: 0.9em;"
+            neutral_style = "padding: 4px 15px; color: gray !important; font-weight: bold; background-color: rgba(128,128,128,0.1); border-radius: 12px; font-size: 0.9em;"
             
             if h_num > a_num:
                 final_h, final_a = win_h_style, neutral_style
@@ -547,16 +532,15 @@ def render_match_details(match_id, theme_name):
             with s1: 
                 st.markdown(f"<div style='text-align: center;'><span style='{final_h}'>{h_str}</span></div>", unsafe_allow_html=True)
             with s2: 
-                st.markdown(f"<div style='text-align: center; color: gray !important; font-weight: bold;'>{he_type}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='text-align: center; color: gray !important; font-weight: bold; font-size: 0.9em;'>{he_type}</div>", unsafe_allow_html=True)
             with s3: 
                 st.markdown(f"<div style='text-align: center;'><span style='{final_a}'>{a_str}</span></div>", unsafe_allow_html=True)
-            st.markdown("<hr style='margin: 15px 0; border: 0; border-top: 1px solid rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin: 10px 0; border: 0; border-top: 1px solid rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
     else:
         st.markdown("<div style='text-align: center; color: gray !important;'>אין סטטיסטיקות זמינות למשחק זה.</div>", unsafe_allow_html=True)
         
     st.divider()
-    
-    st.markdown("<h4 style='text-align: center; margin-bottom: 20px; color: gray !important; font-weight: 900;'>מידע על המשחק</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align: center; margin-bottom: 15px; color: gray !important; font-weight: 900;'>מידע על המשחק</h4>", unsafe_allow_html=True)
     match_date_str = full_match['fixture']['date']
     try:
         dt = datetime.strptime(match_date_str, "%Y-%m-%dT%H:%M:%S%z")
@@ -569,9 +553,9 @@ def render_match_details(match_id, theme_name):
     c_round_display = f" ({c_round})" if c_round else ""
     
     st.markdown(f"""
-    <div style='text-align: center; font-size: 1.2em; line-height: 2; background-color: {bg_info}; color: {tc} !important; padding: 20px; border-radius: 15px; border: 1px solid rgba(128,128,128,0.1); font-weight: 600;'>
+    <div style='text-align: center; font-size: 1em; line-height: 1.8; background-color: {bg_info}; color: {tc} !important; padding: 15px; border-radius: 12px; border: 1px solid rgba(128,128,128,0.1); font-weight: 600;'>
         📅 <b>תאריך:</b> {formatted_date} <br>
-        🏆 <b>תחרות:</b> <img src='{c_league_logo}' width='25' style='vertical-align: middle; margin-left: 5px; border-radius: 50%;'> {c_league}{c_round_display} <br>
+        🏆 <b>תחרות:</b> <img src='{c_league_logo}' width='20' style='vertical-align: middle; margin-left: 4px; border-radius: 50%;'> {c_league}{c_round_display} <br>
         🏟️ <b>אצטדיון:</b> {stadium}
     </div>
     """, unsafe_allow_html=True)
@@ -589,7 +573,7 @@ with col_theme:
         on_change=change_theme
     )
 
-# --- הלוגו החדש! ---
+# --- הלוגו ---
 st.markdown("""
 <div class="app-logo-wrapper">
     <div class="app-icon-box">⚽</div>
@@ -656,14 +640,14 @@ if nav_choice == "📋 יומן המשחקים":
                 tc_mem = "#856404" if is_light else "#ffc107"
                 
                 st.markdown(f"""
-                <div style='background: {bg_mem}; padding: 20px; border-radius: 15px; border: 1px solid {bord_mem}; text-align: center; font-size: 1.2em; color: {tc_mem} !important; font-weight: 900; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(255,193,7,0.1);'>
+                <div style='background: {bg_mem}; padding: 15px; border-radius: 12px; border: 1px solid {bord_mem}; text-align: center; font-size: 1.1em; color: {tc_mem} !important; font-weight: 900; margin-bottom: 15px;'>
                     {msg}
                 </div>
                 """, unsafe_allow_html=True)
             st.write("---")
 
         with st.container():
-            st.markdown("<h4 style='text-align: right; color: gray !important;'>חיפוש וסינון ביומן 🔍</h4>", unsafe_allow_html=True)
+            st.markdown("<h4 style='text-align: right; color: gray !important; font-size: 1.1em;'>חיפוש וסינון ביומן 🔍</h4>", unsafe_allow_html=True)
             col_search, col_filter = st.columns(2)
             
             with col_search:
@@ -684,7 +668,7 @@ if nav_choice == "📋 יומן המשחקים":
             if text_match and comp_match:
                 filtered_matches.append(match)
         
-        st.markdown(f"<p style='color: gray !important; font-size: 0.95em; font-weight: bold;'>מציג {len(filtered_matches)} מתוך {len(st.session_state.saved_matches)} משחקים שמורים ביומן</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color: gray !important; font-size: 0.9em; font-weight: bold;'>מציג {len(filtered_matches)} מתוך {len(st.session_state.saved_matches)} משחקים שמורים ביומן</p>", unsafe_allow_html=True)
         
         if len(filtered_matches) == 0:
             st.warning("לא נמצאו משחקים שתואמים לחיפוש שלך.")
@@ -702,8 +686,7 @@ if nav_choice == "📋 יומן המשחקים":
             match_id = match.get('ID_משחק')
             attended = match.get('הייתי_במשחק', False)
             
-            # עמודות נקיות
-            col_match, col_attend, col_del = st.columns([11, 3, 1])
+            col_match, col_attend, col_del = st.columns([10, 3, 1])
             
             with col_del:
                 st.write("")
@@ -753,7 +736,7 @@ if nav_choice == "📋 יומן המשחקים":
 # מסך 2: חיפוש משחקים חדשים
 # ==========================================
 elif nav_choice == "🔍 חיפוש והוספת משחקים":
-    st.markdown("<h3 style='text-align: center; margin-bottom: 30px; font-weight: 900;'>חיפוש משחקים חדשים 🔍</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.5em;'>חיפוש משחקים חדשים 🔍</h3>", unsafe_allow_html=True)
     
     with st.container():
         col1, col_vs, col2 = st.columns([5, 1, 5])
@@ -785,7 +768,7 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                 res2 = search_teams_api(t2_en)
                 
                 if res1 == "DAILY_LIMIT" or res2 == "DAILY_LIMIT":
-                    st.error("🛑 הגעת למגבלה היומית של השרת! (100 חיפושים ביום). המגבלה תתאפס הלילה בשעה 03:00.")
+                    st.error("🛑 הגעת למגבלה היומית של השרת! (100 חיפושים ביום).")
                     st.session_state.t1_opts = []
                     st.session_state.t2_opts = []
                 elif res1 == "RATE_LIMIT" or res2 == "RATE_LIMIT":
@@ -793,15 +776,15 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                     st.session_state.t1_opts = []
                     st.session_state.t2_opts = []
                 elif res1 == "INVALID_KEY" or res2 == "INVALID_KEY":
-                    st.error("🔑 מפתח ה-API שלך שגוי או לא פעיל. אנא בדוק אותו.")
+                    st.error("🔑 מפתח ה-API שלך שגוי או לא פעיל.")
                     st.session_state.t1_opts = []
                     st.session_state.t2_opts = []
                 elif res1 == "API_ERROR" or res2 == "API_ERROR" or res1 == "NETWORK_ERROR" or res2 == "NETWORK_ERROR":
-                    st.error("⚠️ יש בעיית תקשורת עם השרת. נסה שוב בעוד כמה רגעים.")
+                    st.error("⚠️ יש בעיית תקשורת עם השרת.")
                     st.session_state.t1_opts = []
                     st.session_state.t2_opts = []
                 elif not res1 or not res2:
-                    st.info(f"לא מצאנו את הקבוצות: '{t1_en}' או '{t2_en}'. נסה לאיית באנגלית (כמו Real Madrid).")
+                    st.info(f"לא מצאנו את הקבוצות. נסה לאיית באנגלית (כמו Al Hilal).")
                     st.session_state.t1_opts = []
                     st.session_state.t2_opts = []
                 else:
@@ -810,8 +793,8 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                     st.session_state.search_results = [] 
 
     if st.session_state.t1_opts and st.session_state.t2_opts:
-        st.markdown("<hr style='margin: 30px 0; border: 0; border-top: 2px dashed rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='text-align: center; font-weight: 900;'>🎯 בחר את הקבוצות המדויקות:</h4>", unsafe_allow_html=True)
+        st.markdown("<hr style='margin: 20px 0; border: 0; border-top: 2px dashed rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; font-weight: 900; font-size: 1.2em;'>🎯 בחר את הקבוצות המדויקות:</h4>", unsafe_allow_html=True)
         
         c1, c2 = st.columns(2)
         with c1:
@@ -835,8 +818,8 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                 
                 if data.get('errors') and len(data['errors']) > 0:
                     err = data['errors']
-                    if 'requests' in err: st.error("🛑 הגעת למגבלה היומית של השרת! (100 חיפושים ביום). נסה שוב מחר.")
-                    elif 'rateLimit' in err: st.warning("⏳ חרגת ממגבלת 10 קריאות בדקה. חכה דקה ונסה שוב!")
+                    if 'requests' in err: st.error("🛑 הגעת למגבלה היומית של השרת!")
+                    elif 'rateLimit' in err: st.warning("⏳ חרגת ממגבלת הקריאות לדקה.")
                     else: st.error("⚠️ שגיאת שרת.")
                 elif data.get('results', 0) > 0:
                     matches = data['response']
@@ -855,7 +838,7 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
 
     if len(st.session_state.search_results) > 0:
         st.write("---")
-        st.write("### תוצאות אחרונות שנמצאו:")
+        st.markdown("### תוצאות אחרונות שנמצאו:")
         
         for idx, match in enumerate(st.session_state.search_results[:15]):
             date = match['fixture']['date'][:10]
@@ -871,7 +854,7 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
             away_logo = match['teams']['away']['logo']
             league_logo = match['league']['logo'] 
             
-            col_text, col_btn = st.columns([7, 1])
+            col_text, col_btn = st.columns([5, 1])
             
             with col_text:
                 st.markdown(match_card_html(date, competition, stadium, home_team, away_team, f"{home_goals} - {away_goals}", home_logo, away_logo, league_logo, st.session_state.theme), unsafe_allow_html=True)
@@ -882,9 +865,9 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                 is_saved = any(str(saved.get('ID_משחק')) == str(match_id) for saved in st.session_state.saved_matches)
                 
                 if is_saved:
-                    st.button("✅ נשמר", key=f"saved_{match_id}_{idx}", disabled=True, use_container_width=True)
+                    st.button("✅", key=f"saved_{match_id}_{idx}", disabled=True, use_container_width=True, help="נשמר")
                 else:
-                    if st.button("➕ הוסף", key=f"add_{match_id}_{idx}", use_container_width=True):
+                    if st.button("➕", key=f"add_{match_id}_{idx}", use_container_width=True, help="הוסף ליומן"):
                         match_data = {
                             "ID_משחק": match_id,
                             "תאריך": date,
@@ -905,7 +888,7 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
 # מסך 3: סטטיסטיקות אישיות ושיתוף
 # ==========================================
 elif nav_choice == "📊 סטטיסטיקות אישיות":
-    st.markdown("<h3 style='text-align: center; margin-bottom: 30px; font-weight: 900;'>הסטטיסטיקות האישיות שלך 📈</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; margin-bottom: 25px; font-weight: 900; font-size: 1.5em;'>הסטטיסטיקות שלך 📈</h3>", unsafe_allow_html=True)
     
     saved = st.session_state.saved_matches
     is_light = (st.session_state.theme == "בהיר ☀️")
@@ -948,12 +931,12 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         top_stadium = stadiums_counter.most_common(1)[0][0] if stadiums_counter else "אין נתונים"
         top_comp = comps_counter.most_common(1)[0][0] if comps_counter else "אין נתונים"
         
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
         
         with col1:
             st.markdown(f"""
             <div class='stat-card'>
-                <div class='stat-title'>סך הכל משחקים ביומן</div>
+                <div class='stat-title'>משחקים ביומן</div>
                 <div class='stat-value'>🏟️ {total_matches}</div>
             </div>
             """, unsafe_allow_html=True)
@@ -961,49 +944,30 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         with col2:
             st.markdown(f"""
             <div class='stat-card'>
-                <div class='stat-title'>סך הכל שערים שראית</div>
+                <div class='stat-title'>שערים שראית</div>
                 <div class='stat-value'>⚽ {total_goals}</div>
-                <div style='color: gray !important; font-size: 0.95em; font-weight: bold;'>ממוצע של {avg_goals} גולים למשחק!</div>
+                <div style='color: gray !important; font-size: 0.85em; font-weight: bold;'>ממוצע {avg_goals} למשחק</div>
             </div>
             """, unsafe_allow_html=True)
             
+        col3, col4 = st.columns(2)
         with col3:
             st.markdown(f"""
             <div class='stat-card'>
-                <div class='stat-title'>הקבוצה הנצפית ביותר</div>
-                <div class='stat-value' style='font-size: 1.8em; margin-top: 15px;'>🛡️ {top_team}</div>
+                <div class='stat-title'>קבוצה מובילה</div>
+                <div class='stat-value' style='font-size: 1.4em; margin-top: 10px;'>🛡️ {top_team}</div>
             </div>
             """, unsafe_allow_html=True)
-            
-        st.write("")
-        col4, col5, col6 = st.columns(3)
-        
         with col4:
             st.markdown(f"""
             <div class='stat-card'>
-                <div class='stat-title'>התחרות המככבת</div>
-                <div class='stat-value' style='font-size: 1.6em; color: #28a745 !important;'>🏆 {top_comp}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-        with col5:
-            st.markdown(f"""
-            <div class='stat-card'>
-                <div class='stat-title'>האצטדיון המוביל</div>
-                <div class='stat-value' style='font-size: 1.6em; color: #17a2b8 !important;'>📍 {top_stadium}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-        with col6:
-            st.markdown(f"""
-            <div class='stat-card'>
-                <div class='stat-title'>משחקים שראית מהיציע</div>
+                <div class='stat-title'>משחקי יציע</div>
                 <div class='stat-value' style='font-size: 1.6em; color: #ffc107 !important;'>🎟️ {total_attended}</div>
             </div>
             """, unsafe_allow_html=True)
 
         st.write("---")
-        st.markdown("<h4 style='text-align: center; color: gray !important; margin-bottom: 20px; font-weight: 900;'>📤 ייצוא ושיתוף הנתונים שלך</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; color: gray !important; margin-bottom: 15px; font-weight: 900; font-size: 1.1em;'>📤 ייצוא ושיתוף</h4>", unsafe_allow_html=True)
         
         df_export = pd.DataFrame(saved)
         csv_export = df_export.to_csv(index=False).encode('utf-8-sig')
@@ -1021,11 +985,11 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         encoded_wa_text = urllib.parse.quote(wa_text)
         wa_link = f"https://api.whatsapp.com/send?text={encoded_wa_text}"
         
-        col_dl1, col_dl2, col_dl3 = st.columns([1, 2, 1])
+        col_dl1, col_dl2, col_dl3 = st.columns([1, 8, 1])
         
         with col_dl2:
             st.download_button(
-                label="⬇️ הורד את היומן שלי למחשב (גיבוי אקסל)",
+                label="⬇️ הורד גיבוי לאקסל",
                 data=csv_export,
                 file_name="my_football_diary.csv",
                 mime="text/csv",
@@ -1033,7 +997,7 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             )
             
             st.markdown(f"""
-            <a href="{wa_link}" target="_blank" style="display: block; background-color: #25D366; color: white !important; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; text-align: center; margin-top: 15px; box-shadow: 0 4px 6px rgba(37,211,102,0.3); transition: transform 0.2s;">
-                📲 שתף את הסטטיסטיקות שלי בוואטסאפ
+            <a href="{wa_link}" target="_blank" style="display: block; background-color: #25D366; color: white !important; padding: 10px 15px; border-radius: 12px; text-decoration: none; font-weight: 900; text-align: center; margin-top: 10px; font-size: 0.95em; box-shadow: 0 4px 6px rgba(37,211,102,0.3);">
+                📲 שתף בוואטסאפ
             </a>
             """, unsafe_allow_html=True)
