@@ -39,7 +39,7 @@ if 'search_results' not in st.session_state: st.session_state.search_results = [
 if 't1_opts' not in st.session_state: st.session_state.t1_opts = []
 if 't2_opts' not in st.session_state: st.session_state.t2_opts = []
 
-# --- בניית ה-CSS הדינמי המותאם למובייל ---
+# --- בניית ה-CSS הדינמי המציג את תצוגת המחשב מכווצת בטלפון ---
 is_light = (st.session_state.theme == "בהיר ☀️")
 
 bg_color = "#f8f9fa" if is_light else "#0e1117"
@@ -54,10 +54,15 @@ st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap');
 
-/* מניעת גלילה אופקית וחסימת חריגות רוחב במסכים צרים */
+/* כיווץ אחיד של כל התצוגה במובייל כך שתיראה בדיוק כמו במחשב רק קטן יותר */
+@media screen and (max-width: 768px) {{
+    .main {{
+        zoom: 0.75;
+    }}
+}}
+
 html, body, [data-testid="stAppViewContainer"] {{
     overflow-x: hidden !important;
-    max-width: 100vw !important;
 }}
 
 /* החלת הפונט על כל הטקסטים */
