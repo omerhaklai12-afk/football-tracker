@@ -39,7 +39,7 @@ if 'search_results' not in st.session_state: st.session_state.search_results = [
 if 't1_opts' not in st.session_state: st.session_state.t1_opts = []
 if 't2_opts' not in st.session_state: st.session_state.t2_opts = []
 
-# --- בניית ה-CSS הדינמי המציג את תצוגת המחשב מכווצת בטלפון ---
+# --- בניית ה-CSS שמונע שבירת שורות במובייל ומיישר הכל כמו במחשב ---
 is_light = (st.session_state.theme == "בהיר ☀️")
 
 bg_color = "#f8f9fa" if is_light else "#0e1117"
@@ -54,15 +54,17 @@ st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap');
 
-/* כיווץ אחיד של כל התצוגה במובייל כך שתיראה בדיוק כמו במחשב רק קטן יותר */
-@media screen and (max-width: 768px) {{
-    .main {{
-        zoom: 0.75;
-    }}
-}}
-
 html, body, [data-testid="stAppViewContainer"] {{
     overflow-x: hidden !important;
+}}
+
+/* ביטול ההתאמה האוטומטית של סטריםליט במובייל כדי שהעמודות יישארו בדיוק כמו במחשב */
+@media screen and (max-width: 768px) {{
+    [data-testid="column"] {{
+        float: left !important;
+        flex: 1 !important;
+        min-width: unset !important;
+    }}
 }}
 
 /* החלת הפונט על כל הטקסטים */
@@ -330,21 +332,22 @@ def match_card_html(date, competition, stadium, home_team, away_team, score, hom
     is_lht = (theme_name == "בהיר ☀️")
     tc_inline = "#333333 !important" if is_lht else "white !important"
     
-    img_league = f"<img src='{league_logo}' width='20' style='vertical-align: middle; margin-left: 4px; border-radius: 50%;'>" if league_logo else ""
-    img_home = f"<img src='{home_logo}' width='35' style='vertical-align: middle; margin-left: 8px;'>" if home_logo else ""
-    img_away = f"<img src='{away_logo}' width='35' style='vertical-align: middle; margin-right: 8px;'>" if away_logo else ""
+    img_league = f"<img src='{league_logo}' width='16' style='vertical-align: middle; margin-left: 3px; border-radius: 50%;'>" if league_logo else ""
+    # דגלים קומפקטיים שיישארו בתוך השורה בלי לרדת למטה
+    img_home = f"<img src='{home_logo}' width='26' style='vertical-align: middle; margin-left: 5px; flex-shrink: 0;'>" if home_logo else ""
+    img_away = f"<img src='{away_logo}' width='26' style='vertical-align: middle; margin-right: 5px; flex-shrink: 0;'>" if away_logo else ""
     
-    att_tag = "<br><span style='background: linear-gradient(45deg, #28a745, #20c997); color: white !important; padding: 2px 8px; border-radius: 15px; font-size: 0.75em; font-weight: 900; display: inline-block; margin-top: 4px;'>🎟️ באצטדיון</span>" if attended else ""
+    att_tag = "<span style='background: linear-gradient(45deg, #28a745, #20c997); color: white !important; padding: 2px 6px; border-radius: 10px; font-size: 0.7em; font-weight: 900; margin-right: 5px;'>🎟️ באצטדיון</span>" if attended else ""
     
     return f"""
     <div class='match-card'>
-        <div style='text-align: center; color: #888 !important; font-size: 0.85em; font-weight: bold; margin-bottom: 10px;'>
+        <div style='text-align: center; color: #888 !important; font-size: 0.8em; font-weight: bold; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'>
             📅 <span style='color: {tc_inline};'>{date}</span> &nbsp;|&nbsp; 🏆 {img_league} {competition} &nbsp;|&nbsp; 🏟️ {stadium} {att_tag}
         </div>
-        <div style='text-align: center; font-size: 1.2em; display: flex; align-items: center; justify-content: center; color: {tc_inline}; font-weight: 900; flex-wrap: wrap; gap: 5px;'>
-            {img_home} <span>{home_team}</span> 
-            <span style='background: linear-gradient(135deg, #007bff, #0056b3); color: white !important; padding: 4px 15px; border-radius: 20px; font-weight: 900; margin: 0 10px; font-size: 0.9em; letter-spacing: 1px;'>{score}</span> 
-            <span>{away_team}</span> {img_away}
+        <div style='text-align: center; font-size: 1.1em; display: flex; align-items: center; justify-content: center; color: {tc_inline}; font-weight: 900; flex-wrap: nowrap; gap: 4px;'>
+            {img_home} <span style='white-space: nowrap;'>{home_team}</span> 
+            <span style='background: linear-gradient(135deg, #007bff, #0056b3); color: white !important; padding: 3px 10px; border-radius: 16px; font-weight: 900; margin: 0 6px; font-size: 0.85em; letter-spacing: 1px; flex-shrink: 0;'>{score}</span> 
+            <span style='white-space: nowrap;'>{away_team}</span> {img_away}
         </div>
     </div>
     """
@@ -690,24 +693,10 @@ if nav_choice == "📋 יומן המשחקים":
             match_id = match.get('ID_משחק')
             attended = match.get('הייתי_במשחק', False)
             
-            col_match, col_attend, col_del = st.columns([10, 3, 1])
+            # וידוא שכל הפריטים (כרטיסיית המשחק, תיבת הסימון וכפתור המחיקה) יישארו בשורה אחת בדיוק כמו במחשב
+            cols = st.columns([13, 3, 1])
             
-            with col_del:
-                st.write("")
-                st.write("") 
-                if st.button("🗑️", key=f"del_out_{match_id}", help="מחק משחק"):
-                    delete_confirmation_dialog(match_id, f"{home_team} נגד {away_team}")
-                    
-            with col_attend:
-                st.write("")
-                st.write("")
-                st.write("")
-                new_attended = st.checkbox("הייתי באצטדיון 🏟️", value=attended, key=f"att_{match_id}")
-                if new_attended != attended:
-                    update_attendance_in_file(match_id, new_attended)
-                    st.rerun()
-
-            with col_match:
+            with cols[0]:
                 st.markdown(match_card_html(date, competition, stadium, home_team, away_team, score, home_logo, away_logo, league_logo, st.session_state.theme, attended), unsafe_allow_html=True)
                 
                 with st.expander("📊 הצג אירועים וסטטיסטיקות"):
@@ -731,6 +720,18 @@ if nav_choice == "📋 יומן המשחקים":
                                 with open(img_path, "wb") as f:
                                     f.write(uploaded_file.getbuffer())
                                 st.rerun()
+
+            with cols[1]:
+                st.write("") # יישור אנכי מול הכרטיסייה
+                new_attended = st.checkbox("הייתי 🏟️", value=attended, key=f"att_{match_id}")
+                if new_attended != attended:
+                    update_attendance_in_file(match_id, new_attended)
+                    st.rerun()
+
+            with cols[2]:
+                st.write("") # יישור אנכי מול הכרטיסייה
+                if st.button("🗑️", key=f"del_out_{match_id}", help="מחק משחק"):
+                    delete_confirmation_dialog(match_id, f"{home_team} נגד {away_team}")
             
             st.write("")
     else:
