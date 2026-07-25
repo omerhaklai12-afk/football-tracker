@@ -867,7 +867,6 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
             match_id = match['fixture']['id'] 
             
             home_logo = match['teams']['home']['logo']
-            away_logo = match['teams']['home']['logo'] # תיקון קל
             away_logo = match['teams']['away']['logo']
             league_logo = match['league']['logo'] 
             
@@ -967,7 +966,6 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             comp = match.get('תחרות', '')
             if comp and comp != 'None': comps_counter[comp] += 1
 
-            # שליפת אירועים (שערים וכרטיסים אדומים) עבור מלכי השערים והאדומים
             m_id = match.get('ID_משחק')
             if m_id:
                 details = get_fixture_details(m_id)
@@ -976,12 +974,10 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
                     for ev in match_obj.get('events', []):
                         ev_type = ev.get('type')
                         ev_detail = str(ev.get('detail', ''))
-                        # ספירת שערים למלכי השערים (לא שער עצמי)
                         if ev_type in ['Goal', 'Penalty'] and ev_detail != 'Own Goal':
                             p_name = ev.get('player', {}).get('name')
                             if p_name:
                                 scorers_counter[p_name] += 1
-                        # ספירת כרטיסים אדומים בלבד
                         if ev_type == 'Card' and 'Red' in ev_detail:
                             total_red_cards += 1
             
@@ -992,8 +988,10 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         
         top_month = months_counter.most_common(1)[0][0] if months_counter else "אין נתונים"
         top_scorer = scorers_counter.most_common(1)[0] if scorers_counter else None
-        
         top_stadium = stadiums_counter.most_common(1)[0][0] if stadiums_counter else "אין נתונים"
+        
+        # חישוב שעות כדורגל (כל משחק מחושב כ-2 שעות בממוצע)
+        total_hours = total_matches * 2
         
         col1, col2 = st.columns(2)
         
@@ -1030,7 +1028,6 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             </div>
             """, unsafe_allow_html=True)
 
-        # שורת סטטיסטיקות חדשות: חודש שיא, מלך שערים וכרטיסים אדומים
         col5, col6, col7 = st.columns(3)
         with col5:
             st.markdown(f"""
@@ -1055,6 +1052,15 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             </div>
             """, unsafe_allow_html=True)
 
+        # כרטיס חדש: מחשבון שעות כדורגל
+        st.markdown(f"""
+        <div class='stat-card' style='margin-top: 12px; background: linear-gradient(135deg, rgba(0,123,255,0.1), rgba(0,210,255,0.05));'>
+            <div class='stat-title'>⏱️ סך כל שעות הצפייה בכדורגל</div>
+            <div class='stat-value' style='font-size: 2.5em; color: #00d2ff !important;'>{total_hours} שעות</div>
+            <div style='color: gray !important; font-size: 0.9em; font-weight: bold;'>הושקעו בצפייה במשחקים ששמרת ביומן</div>
+        </div>
+        """, unsafe_allow_html=True)
+
         st.write("---")
         st.markdown("<h4 style='text-align: center; color: gray !important; margin-bottom: 15px; font-weight: 900; font-size: 1.1em;'>📤 ייצוא ושיתוף</h4>", unsafe_allow_html=True)
         
@@ -1064,6 +1070,7 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         wa_text = f"""⚽ *הסטטיסטיקות שלי ביציע ובספה!* ⚽
         
 🏟️ משחקים שצפיתי: {total_matches}
+⏱️ שעות כדורגל: {total_hours} שעות
 🎟️ משחקים מהיציע: {total_attended}
 🥅 סך הכל שערים שראיתי: {total_goals} ({avg_goals} למשחק!)
 🛡️ הקבוצה הנצפית ביותר: {top_team}
