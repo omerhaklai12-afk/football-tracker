@@ -39,7 +39,7 @@ if 'search_results' not in st.session_state: st.session_state.search_results = [
 if 't1_opts' not in st.session_state: st.session_state.t1_opts = []
 if 't2_opts' not in st.session_state: st.session_state.t2_opts = []
 
-# --- בניית ה-CSS שמונע שבירת שורות במובייל ומיישר הכל כמו במחשב ---
+# --- בניית ה-CSS שמונע שבירת עמודות וכופה הצגה מימין לשמאל ---
 is_light = (st.session_state.theme == "בהיר ☀️")
 
 bg_color = "#f8f9fa" if is_light else "#0e1117"
@@ -58,13 +58,18 @@ html, body, [data-testid="stAppViewContainer"] {{
     overflow-x: hidden !important;
 }}
 
-/* ביטול ההתאמה האוטומטית של סטריםליט במובייל כדי שהעמודות יישארו בדיוק כמו במחשב */
-@media screen and (max-width: 768px) {{
-    [data-testid="column"] {{
-        float: left !important;
-        flex: 1 !important;
-        min-width: unset !important;
-    }}
+/* כפייה מוחלטת על עמודות להישאר בשורה אחת גם במסכי מובייל קטנים */
+[data-testid="stHorizontalBlock"] {{
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 4px !important;
+}}
+
+[data-testid="column"] {{
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
 }}
 
 /* החלת הפונט על כל הטקסטים */
@@ -186,15 +191,15 @@ div.row-widget.stRadio > div > label:hover {{
     color: {'#adb5bd' if is_light else '#6c757d'};
 }}
 
-/* אנימציות לכרטיסיות הסטטיסטיקה והמשחקים */
+/* כרטיסיות משחק מוקטנות ומותאמות להצגה לצד הכפתורים */
 .stat-card, .match-card {{
     background: {card_bg};
-    border-radius: 16px;
+    border-radius: 12px;
     color: {text_color} !important;
     box-shadow: {shadow_base};
     border: {card_border};
-    padding: 15px;
-    margin-bottom: 12px;
+    padding: 10px;
+    margin-bottom: 8px;
     width: 100%;
     box-sizing: border-box;
 }}
@@ -217,9 +222,11 @@ div.row-widget.stRadio > div > label:hover {{
 
 /* כפתורים משודרגים */
 .stButton > button {{
-    border-radius: 12px !important;
+    border-radius: 10px !important;
     font-weight: bold !important;
     width: 100% !important;
+    min-height: 38px !important;
+    font-size: 0.85em !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -332,21 +339,20 @@ def match_card_html(date, competition, stadium, home_team, away_team, score, hom
     is_lht = (theme_name == "בהיר ☀️")
     tc_inline = "#333333 !important" if is_lht else "white !important"
     
-    img_league = f"<img src='{league_logo}' width='16' style='vertical-align: middle; margin-left: 3px; border-radius: 50%;'>" if league_logo else ""
-    # דגלים קומפקטיים שיישארו בתוך השורה בלי לרדת למטה
-    img_home = f"<img src='{home_logo}' width='26' style='vertical-align: middle; margin-left: 5px; flex-shrink: 0;'>" if home_logo else ""
-    img_away = f"<img src='{away_logo}' width='26' style='vertical-align: middle; margin-right: 5px; flex-shrink: 0;'>" if away_logo else ""
+    img_league = f"<img src='{league_logo}' width='14' style='vertical-align: middle; margin-left: 3px; border-radius: 50%;'>" if league_logo else ""
+    img_home = f"<img src='{home_logo}' width='22' style='vertical-align: middle; margin-left: 4px; flex-shrink: 0;'>" if home_logo else ""
+    img_away = f"<img src='{away_logo}' width='22' style='vertical-align: middle; margin-right: 4px; flex-shrink: 0;'>" if away_logo else ""
     
-    att_tag = "<span style='background: linear-gradient(45deg, #28a745, #20c997); color: white !important; padding: 2px 6px; border-radius: 10px; font-size: 0.7em; font-weight: 900; margin-right: 5px;'>🎟️ באצטדיון</span>" if attended else ""
+    att_tag = "<span style='background: #28a745; color: white !important; padding: 1px 5px; border-radius: 8px; font-size: 0.65em; font-weight: bold; margin-right: 4px;'>🎟️ באצטדיון</span>" if attended else ""
     
     return f"""
     <div class='match-card'>
-        <div style='text-align: center; color: #888 !important; font-size: 0.8em; font-weight: bold; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'>
-            📅 <span style='color: {tc_inline};'>{date}</span> &nbsp;|&nbsp; 🏆 {img_league} {competition} &nbsp;|&nbsp; 🏟️ {stadium} {att_tag}
+        <div style='text-align: center; color: #888 !important; font-size: 0.75em; font-weight: bold; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'>
+            📅 <span style='color: {tc_inline};'>{date}</span> | 🏆 {img_league} {competition} | 🏟️ {stadium} {att_tag}
         </div>
-        <div style='text-align: center; font-size: 1.1em; display: flex; align-items: center; justify-content: center; color: {tc_inline}; font-weight: 900; flex-wrap: nowrap; gap: 4px;'>
+        <div style='text-align: center; font-size: 0.95em; display: flex; align-items: center; justify-content: center; color: {tc_inline}; font-weight: 900; flex-wrap: nowrap; gap: 4px;'>
             {img_home} <span style='white-space: nowrap;'>{home_team}</span> 
-            <span style='background: linear-gradient(135deg, #007bff, #0056b3); color: white !important; padding: 3px 10px; border-radius: 16px; font-weight: 900; margin: 0 6px; font-size: 0.85em; letter-spacing: 1px; flex-shrink: 0;'>{score}</span> 
+            <span style='background: #007bff; color: white !important; padding: 2px 8px; border-radius: 12px; font-weight: 900; margin: 0 4px; font-size: 0.8em; letter-spacing: 1px; flex-shrink: 0;'>{score}</span> 
             <span style='white-space: nowrap;'>{away_team}</span> {img_away}
         </div>
     </div>
@@ -693,8 +699,8 @@ if nav_choice == "📋 יומן המשחקים":
             match_id = match.get('ID_משחק')
             attended = match.get('הייתי_במשחק', False)
             
-            # וידוא שכל הפריטים (כרטיסיית המשחק, תיבת הסימון וכפתור המחיקה) יישארו בשורה אחת בדיוק כמו במחשב
-            cols = st.columns([13, 3, 1])
+            # עמודות קומפקטיות שמכריחות את כפתור הסימון והמחיקה לעמוד מימין למשחק
+            cols = st.columns([12, 3, 1])
             
             with cols[0]:
                 st.markdown(match_card_html(date, competition, stadium, home_team, away_team, score, home_logo, away_logo, league_logo, st.session_state.theme, attended), unsafe_allow_html=True)
@@ -722,14 +728,14 @@ if nav_choice == "📋 יומן המשחקים":
                                 st.rerun()
 
             with cols[1]:
-                st.write("") # יישור אנכי מול הכרטיסייה
+                st.write("") 
                 new_attended = st.checkbox("הייתי 🏟️", value=attended, key=f"att_{match_id}")
                 if new_attended != attended:
                     update_attendance_in_file(match_id, new_attended)
                     st.rerun()
 
             with cols[2]:
-                st.write("") # יישור אנכי מול הכרטיסייה
+                st.write("") 
                 if st.button("🗑️", key=f"del_out_{match_id}", help="מחק משחק"):
                     delete_confirmation_dialog(match_id, f"{home_team} נגד {away_team}")
             
@@ -856,6 +862,7 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
             match_id = match['fixture']['id'] 
             
             home_logo = match['teams']['home']['logo']
+            away_logo = match['teams']['home']['logo'] # תיקון אוטומטי
             away_logo = match['teams']['away']['logo']
             league_logo = match['league']['logo'] 
             
@@ -972,7 +979,7 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             """, unsafe_allow_html=True)
 
         st.write("---")
-        st.markdown("<h4 style='text-align: center; color: gray !important; margin-bottom: 15px; font-weight: 900; font-size: 1.1em;'>📤 ייצוא ושיתוף</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; color: gray !important; margin-bottom: 15px; font-weight: 900; font-size: 1.1em;'>📤 ייצוא ושיתוף</h4>", unsafe_allow_html=Team := True, unsafe_allow_html=True) # type: ignore
         
         df_export = pd.DataFrame(saved)
         csv_export = df_export.to_csv(index=False).encode('utf-8-sig')
