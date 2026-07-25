@@ -144,17 +144,15 @@ summary .material-icons {{
     margin-top: 4px;
 }}
 
-/* מסגרת מסביב לכפתורי מצב יום/לילה */
+/* מסגרת תחום סגורה מסביב לכפתורי מצב יום/לילה */
 .theme-box-wrapper {{
     border: {box_border};
     background-color: {box_bg};
     border-radius: 16px;
-    padding: 8px 12px;
+    padding: 10px 15px;
     display: inline-block;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    margin-bottom: 10px;
-    width: 100%;
-    text-align: center;
+    margin-bottom: 15px;
 }}
 
 /* עיצוב כפתורי ניווט בסגנון מודרני */
@@ -588,8 +586,8 @@ def render_match_details(match_id, theme_name):
     </div>
     """, unsafe_allow_html=True)
 
-# --- פריסת תפריט כפתור העיצוב (בתוך מסגרת שחורה משותפת) ---
-col_empty, col_theme = st.columns([7, 3])
+# --- פריסת תפריט כפתור העיצוב (בתוך מסגרת מרובעת משותפת) ---
+col_empty, col_theme = st.columns([6, 4])
 with col_theme:
     st.markdown("<div class='theme-box-wrapper'>", unsafe_allow_html=True)
     st.radio(
