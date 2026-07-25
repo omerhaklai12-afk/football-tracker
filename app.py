@@ -974,10 +974,14 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
                     for ev in match_obj.get('events', []):
                         ev_type = ev.get('type')
                         ev_detail = str(ev.get('detail', ''))
-                        if ev_type in ['Goal', 'Penalty'] and ev_detail != 'Own Goal':
+                        comments = str(ev.get('comments', ''))
+                        
+                        # בדיקה שזה לא שער עצמי וגם לא חלק מדו-קרב פנדלים (Penalty Shootout)
+                        if ev_type in ['Goal', 'Penalty'] and ev_detail != 'Own Goal' and 'Penalty Shootout' not in comments:
                             p_name = ev.get('player', {}).get('name')
                             if p_name:
                                 scorers_counter[p_name] += 1
+                                
                         if ev_type == 'Card' and 'Red' in ev_detail:
                             total_red_cards += 1
             
@@ -990,7 +994,7 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         top_scorer = scorers_counter.most_common(1)[0] if scorers_counter else None
         top_stadium = stadiums_counter.most_common(1)[0][0] if stadiums_counter else "אין נתונים"
         
-        # חישוב שעות כדורגל (כל משחק מחושב כ-2 שעות בממוצע)
+        # חישוב שעות כדורגל משוערות
         total_hours = total_matches * 2
         
         col1, col2 = st.columns(2)
@@ -1052,11 +1056,11 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             </div>
             """, unsafe_allow_html=True)
 
-        # כרטיס חדש: מחשבון שעות כדורגל
+        # כרטיס מחשבון שעות כדורגל (עם הסימן ~)
         st.markdown(f"""
         <div class='stat-card' style='margin-top: 12px; background: linear-gradient(135deg, rgba(0,123,255,0.1), rgba(0,210,255,0.05));'>
             <div class='stat-title'>⏱️ סך כל שעות הצפייה בכדורגל</div>
-            <div class='stat-value' style='font-size: 2.5em; color: #00d2ff !important;'>{total_hours} שעות</div>
+            <div class='stat-value' style='font-size: 2.5em; color: #00d2ff !important;'>~{total_hours} שעות</div>
             <div style='color: gray !important; font-size: 0.9em; font-weight: bold;'>הושקעו בצפייה במשחקים ששמרת ביומן</div>
         </div>
         """, unsafe_allow_html=True)
@@ -1070,7 +1074,7 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         wa_text = f"""⚽ *הסטטיסטיקות שלי ביציע ובספה!* ⚽
         
 🏟️ משחקים שצפיתי: {total_matches}
-⏱️ שעות כדורגל: {total_hours} שעות
+⏱️ שעות כדורגל: ~{total_hours} שעות
 🎟️ משחקים מהיציע: {total_attended}
 🥅 סך הכל שערים שראיתי: {total_goals} ({avg_goals} למשחק!)
 🛡️ הקבוצה הנצפית ביותר: {top_team}
