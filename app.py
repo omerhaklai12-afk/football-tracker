@@ -902,7 +902,6 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         teams_counter = Counter()
         stadiums_counter = Counter()
         comps_counter = Counter()
-        team_logos = {}
         
         for match in saved:
             if match.get('הייתי_במשחק', False):
@@ -918,15 +917,8 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
                 
             h_team = match.get('מארחת', '')
             a_team = match.get('אורחת', '')
-            h_logo = match.get('לוגו_מארחת', '')
-            a_logo = match.get('לוגו_אורחת', '')
-            
-            if h_team: 
-                teams_counter[h_team] += 1
-                if h_logo: team_logos[h_team] = h_logo
-            if a_team: 
-                teams_counter[a_team] += 1
-                if a_logo: team_logos[a_team] = a_logo
+            if h_team: teams_counter[h_team] += 1
+            if a_team: teams_counter[a_team] += 1
             
             stadium = match.get('אצטדיון', '')
             if stadium and stadium != 'None': stadiums_counter[stadium] += 1
@@ -936,9 +928,6 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             
         avg_goals = round(total_goals / total_matches, 2) if total_matches > 0 else 0
         top_team = teams_counter.most_common(1)[0][0] if teams_counter else "אין נתונים"
-        top_team_logo = team_logos.get(top_team, "")
-        top_team_display = f"<img src='{top_team_logo}' width='24' style='vertical-align: middle; margin-left: 6px;'> {top_team}" if top_team_logo else top_team
-        
         top_stadium = stadiums_counter.most_common(1)[0][0] if stadiums_counter else "אין נתונים"
         top_comp = comps_counter.most_common(1)[0][0] if comps_counter else "אין נתונים"
         
@@ -966,7 +955,7 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             st.markdown(f"""
             <div class='stat-card'>
                 <div class='stat-title'>קבוצה מובילה</div>
-                <div class='stat-value' style='font-size: 1.2em; margin-top: 10px;'>{top_team_display}</div>
+                <div class='stat-value' style='font-size: 1.4em; margin-top: 10px;'>🛡️ {top_team}</div>
             </div>
             """, unsafe_allow_html=True)
         with col4:
