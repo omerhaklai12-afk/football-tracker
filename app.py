@@ -862,7 +862,6 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
             match_id = match['fixture']['id'] 
             
             home_logo = match['teams']['home']['logo']
-            away_logo = match['teams']['home']['logo'] # תיקון אוטומטי
             away_logo = match['teams']['away']['logo']
             league_logo = match['league']['logo'] 
             
@@ -979,7 +978,7 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             """, unsafe_allow_html=True)
 
         st.write("---")
-        st.markdown("<h4 style='text-align: center; color: gray !important; margin-bottom: 15px; font-weight: 900; font-size: 1.1em;'>📤 ייצוא ושיתוף</h4>", unsafe_allow_html=Team := True, unsafe_allow_html=True) # type: ignore
+        st.markdown("<h4 style='text-align: center; color: gray !important; margin-bottom: 15px; font-weight: 900; font-size: 1.1em;'>📤 ייצוא ושיתוף</h4>", unsafe_allow_html=True)
         
         df_export = pd.DataFrame(saved)
         csv_export = df_export.to_csv(index=False).encode('utf-8-sig')
