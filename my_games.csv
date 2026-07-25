@@ -1,0 +1,9 @@
+ID_משחק,תאריך,תחרות,מארחת,תוצאה,אורחת,אצטדיון,לוגו_מארחת,לוגו_אורחת,לוגו_תחרות,הייתי_במשחק
+978088,2022-12-10,World Cup,Morocco,1 - 0,Portugal,Al Thumama Stadium,https://media.api-sports.io/football/teams/31.png,https://media.api-sports.io/football/teams/27.png,https://media.api-sports.io/football/leagues/1.png,False
+978036,2022-12-10,World Cup,England,1 - 2,France,Al Bayt Stadium,https://media.api-sports.io/football/teams/10.png,https://media.api-sports.io/football/teams/2.png,https://media.api-sports.io/football/leagues/1.png,False
+977794,2022-12-09,World Cup,Netherlands,2 - 2,Argentina,Lusail Iconic Stadium,https://media.api-sports.io/football/teams/1118.png,https://media.api-sports.io/football/teams/26.png,https://media.api-sports.io/football/leagues/1.png,False
+976643,2022-12-04,World Cup,France,3 - 1,Poland,Al Thumama Stadium,https://media.api-sports.io/football/teams/2.png,https://media.api-sports.io/football/teams/24.png,https://media.api-sports.io/football/leagues/1.png,False
+855771,2022-12-02,World Cup,Cameroon,1 - 0,Brazil,Lusail Iconic Stadium,https://media.api-sports.io/football/teams/1530.png,https://media.api-sports.io/football/teams/6.png,https://media.api-sports.io/football/leagues/1.png,False
+855737,2022-11-22,World Cup,Argentina,1 - 2,Saudi Arabia,Lusail Iconic Stadium,https://media.api-sports.io/football/teams/26.png,https://media.api-sports.io/football/teams/23.png,https://media.api-sports.io/football/leagues/1.png,False
+967578,2022-11-17,Friendlies,Israel,4 - 2,Zambia,HaMoshava Stadium,https://media.api-sports.io/football/teams/1116.png,https://media.api-sports.io/football/teams/1507.png,https://media.api-sports.io/football/leagues/10.png,True
+135776,2018-07-15,World Cup,France,4 - 2,Croatia,Stadion Luzhniki,https://media.api-sports.io/football/teams/2.png,https://media.api-sports.io/football/teams/3.png,https://media.api-sports.io/football/leagues/1.png,False
