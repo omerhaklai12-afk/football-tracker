@@ -39,7 +39,7 @@ if 'search_results' not in st.session_state: st.session_state.search_results = [
 if 't1_opts' not in st.session_state: st.session_state.t1_opts = []
 if 't2_opts' not in st.session_state: st.session_state.t2_opts = []
 
-# --- בניית ה-CSS הדינמי המותאם למובייל ולסידור כפתורי העיצוב בשורה ---
+# --- בניית ה-CSS הדינמי המותאם למובייל ולמסגרת המאוחדת ---
 is_light = (st.session_state.theme == "בהיר ☀️")
 
 bg_color = "#f8f9fa" if is_light else "#0e1117"
@@ -80,6 +80,11 @@ footer {{visibility: hidden;}}
 
 .stMarkdown, .stText, p, label, h1, h2, h3, h4, h5, h6, li {{
     color: {text_color} !important;
+}}
+
+/* העלמת כותרת התווית של הסטריםליט לחלוטין כדי שלא תופיע מעל המסגרת */
+div[data-testid="stRadio"] > label {{
+    display: none !important;
 }}
 
 /* העלמת הטקסט הבעייתי והאייקונים המובנים מאחורי האקורדיון */
@@ -144,7 +149,7 @@ summary .material-icons {{
     margin-top: 4px;
 }}
 
-/* מסגרת תחום סגורה מסביב לכפתורי מצב יום/לילה וכפיית שורה אופקית */
+/* מסגרת תחום סגורה מסביב לכפתורי מצב יום/לילה */
 .theme-box-wrapper {{
     border: {box_border};
     background-color: {box_bg};
@@ -155,32 +160,23 @@ summary .material-icons {{
     margin-bottom: 10px;
     direction: rtl;
 }}
-.theme-box-wrapper div[role="radiogroup"] {{
-    display: flex !important;
-    flex-direction: row !important;
-    gap: 15px !important;
-    align-items: center !important;
-    justify-content: center !important;
-}}
 
-/* עיצוב כפתורי ניווט בסגנון מודרני */
+/* כפיית כפתורי הרדיו להיות בשורה אופקית בתוך המסגרת */
 div.row-widget.stRadio > div {{
-    flex-direction: row;
-    justify-content: center;
-    background-color: {radio_bg};
-    padding: 6px;
-    border-radius: 30px;
-    gap: 5px;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-    flex-wrap: wrap;
+    flex-direction: row !important;
+    justify-content: center !important;
+    background-color: transparent !important;
+    padding: 0px !important;
+    gap: 10px !important;
+    box-shadow: none !important;
 }}
 div.row-widget.stRadio > div > label {{
-    background-color: transparent !important;
-    padding: 8px 18px !important;
-    border-radius: 22px !important;
+    background-color: {radio_bg} !important;
+    padding: 6px 14px !important;
+    border-radius: 20px !important;
     cursor: pointer;
     font-weight: 700;
-    font-size: 0.95em;
+    font-size: 0.9em;
     transition: all 0.3s ease;
 }}
 div.row-widget.stRadio > div > label[data-checked="true"] {{
@@ -594,7 +590,7 @@ def render_match_details(match_id, theme_name):
     </div>
     """, unsafe_allow_html=True)
 
-# --- פריסת תפריט כפתור העיצוב (בתוך מסגרת מרובעת משותפת) ---
+# --- פריסת תפריט כפתור העיצוב (בתוך מסגרת מרובעת משותפת ללא כותרת מעל) ---
 col_empty, col_theme = st.columns([6, 4])
 with col_theme:
     st.markdown("<div class='theme-box-wrapper'>", unsafe_allow_html=True)
