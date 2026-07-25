@@ -219,13 +219,13 @@ div.row-widget.stRadio > div > label:hover {{
 """, unsafe_allow_html=True)
 
 
-# --- פונקציות לניהול קובץ השמירה של היומן ---
+# --- פונקציות לניהול קובץ השמירה של היומן (מיון מהחדש לישן) ---
 def load_saved_matches():
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE).fillna('')
         if not df.empty and 'תאריך' in df.columns:
-            # מיון המשחקים מהישן לחדש לפי תאריך
-            df = df.sort_values(by='תאריך', ascending=True)
+            # מיון המשחקים מהחדש לישן לפי תאריך
+            df = df.sort_values(by='תאריך', ascending=False)
         return df.to_dict('records')
     return []
 
@@ -237,10 +237,10 @@ def save_match_to_file(match_data):
     if 'הייתי_במשחק' not in match_data:
         match_data['הייתי_במשחק'] = False
         
-    current_data.append(match_data) # הוספה לסוף הרשימה
+    current_data.insert(0, match_data)
     df = pd.DataFrame(current_data)
     if not df.empty and 'תאריך' in df.columns:
-        df = df.sort_values(by='תאריך', ascending=True) # שמירה ממוינת מהישן לחדש
+        df = df.sort_values(by='תאריך', ascending=False) # שמירה ממוינת מהחדש לישן
     df.to_csv(CSV_FILE, index=False)
     st.session_state.saved_matches = df.to_dict('records')
 
@@ -252,7 +252,7 @@ def delete_match_from_file(match_id):
     if df.empty:
         df = pd.DataFrame(columns=["ID_משחק", "תאריך", "תחרות", "מארחת", "תוצאה", "אורחת", "אצטדיון", "לוגו_מארחת", "לוגו_אורחת", "לוגו_תחרות", "הייתי_במשחק"])
     else:
-        df = df.sort_values(by='תאריך', ascending=True)
+        df = df.sort_values(by='תאריך', ascending=False)
     df.to_csv(CSV_FILE, index=False)
     st.session_state.saved_matches = df.to_dict('records')
     
@@ -268,7 +268,7 @@ def update_attendance_in_file(match_id, attended_status):
             break
     df = pd.DataFrame(current_data)
     if not df.empty and 'תאריך' in df.columns:
-        df = df.sort_values(by='תאריך', ascending=True)
+        df = df.sort_values(by='תאריך', ascending=False)
     df.to_csv(CSV_FILE, index=False)
     st.session_state.saved_matches = df.to_dict('records')
 
@@ -322,9 +322,15 @@ def search_teams_api(team_name):
         if data.get('results', 0) > 0:
             for item in data['response']:
                 team = item['team']
+                name = team['name']
+                
+                # סינון נבחרות צעירות באופן אוטומטי כדי להציג את הנבחרת הבוגרת
+                if any(u in name for u in [" U1", " U2", " U-1", " U-2", "Olympic", "Youth"]):
+                    continue
+                    
                 results.append({
                     'id': team['id'],
-                    'name': team['name'],
+                    'name': name,
                     'country': team.get('country', 'לא ידוע'),
                     'logo': team['logo']
                 })
@@ -947,7 +953,7 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         avg_goals = round(total_goals / total_matches, 2) if total_matches > 0 else 0
         top_team = teams_counter.most_common(1)[0][0] if teams_counter else "אין נתונים"
         top_team_logo = team_logos.get(top_team, "")
-        top_team_display = f"<img src='{top_team_logo}' width='24' style='vertical-align: middle; margin-left: 6px;'> {top_team}" if top_team_logo else top_team
+        top_team_display = f"<img src='{top_team_logo}' width='28' style='vertical-align: middle; margin-left: 6px;'> {top_team}" if top_team_logo else top_team
         
         top_stadium = stadiums_counter.most_common(1)[0][0] if stadiums_counter else "אין נתונים"
         top_comp = comps_counter.most_common(1)[0][0] if comps_counter else "אין נתונים"
@@ -976,7 +982,7 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             st.markdown(f"""
             <div class='stat-card'>
                 <div class='stat-title'>קבוצה מובילה</div>
-                <div class='stat-value' style='font-size: 1.2em; margin-top: 10px;'>{top_team_display}</div>
+                <div class='stat-value' style='font-size: 1.1em; margin-top: 10px;'>{top_team_display}</div>
             </div>
             """, unsafe_allow_html=True)
         with col4:
