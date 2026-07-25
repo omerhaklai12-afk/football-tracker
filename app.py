@@ -39,7 +39,7 @@ if 'search_results' not in st.session_state: st.session_state.search_results = [
 if 't1_opts' not in st.session_state: st.session_state.t1_opts = []
 if 't2_opts' not in st.session_state: st.session_state.t2_opts = []
 
-# --- בניית ה-CSS הדינמי המותאם למובייל ---
+# --- בניית ה-CSS הדינמי המותאם למובייל ולמסגרת הסטייל ---
 is_light = (st.session_state.theme == "בהיר ☀️")
 
 bg_color = "#f8f9fa" if is_light else "#0e1117"
@@ -49,7 +49,8 @@ card_border = "1px solid #e9ecef" if is_light else "1px solid rgba(255,255,255,0
 radio_bg = "#e9ecef" if is_light else "rgba(255, 255, 255, 0.05)"
 radio_hover = "#dee2e6" if is_light else "rgba(255, 255, 255, 0.1)"
 shadow_base = "0 4px 6px rgba(0,0,0,0.05)" if is_light else "0 4px 15px rgba(0,0,0,0.3)"
-shadow_hover = "0 10px 20px rgba(0,0,0,0.1)" if is_light else "0 10px 25px rgba(0,0,0,0.5)"
+box_border = "2px solid #333333" if is_light else "2px solid rgba(255, 255, 255, 0.2)"
+box_bg = "#ffffff" if is_light else "#161b22"
 
 st.markdown(f"""
 <style>
@@ -105,7 +106,7 @@ summary .material-icons {{
     align-items: center;
     justify-content: center;
     gap: 20px;
-    margin-bottom: 35px;
+    margin-bottom: 25px;
     margin-top: 10px;
     direction: rtl;
     flex-wrap: wrap;
@@ -143,7 +144,18 @@ summary .material-icons {{
     margin-top: 4px;
 }}
 
-/* עיצוב כפתורי ניווט בסגנון מודרני */
+/* מסגרת מסביב לכפתורי מצב יום/לילה */
+.theme-box-wrapper {{
+    border: {box_border};
+    background-color: {box_bg};
+    border-radius: 20px;
+    padding: 6px 12px;
+    display: inline-block;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    margin-bottom: 10px;
+}}
+
+/* עיצוב כפתורי ניווט ומעבר עמודות חלק */
 div.row-widget.stRadio > div {{
     flex-direction: row;
     justify-content: center;
@@ -171,6 +183,12 @@ div.row-widget.stRadio > div > label:hover {{
     background-color: {radio_hover} !important;
 }}
 
+/* מעבר עמודות חלק ונעים */
+[data-testid="stHorizontalBlock"] {{
+    align-items: center;
+    gap: 15px;
+}}
+
 /* עיצובים מיוחדים לאזור החיפוש */
 .vs-badge {{
     text-align: center;
@@ -180,7 +198,7 @@ div.row-widget.stRadio > div > label:hover {{
     color: {'#adb5bd' if is_light else '#6c757d'};
 }}
 
-/* אנימציות לכרטיסיות הסטטיסטיקה והמשחקים */
+/* כרטיסיות הסטטיסטיקה והמשחקים */
 .stat-card, .match-card {{
     background: {card_bg};
     border-radius: 16px;
@@ -191,6 +209,7 @@ div.row-widget.stRadio > div > label:hover {{
     margin-bottom: 12px;
     width: 100%;
     box-sizing: border-box;
+    transition: transform 0.2s ease;
 }}
 .stat-card {{
     text-align: center;
@@ -214,6 +233,7 @@ div.row-widget.stRadio > div > label:hover {{
     border-radius: 12px !important;
     font-weight: bold !important;
     width: 100% !important;
+    transition: all 0.2s ease;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -224,7 +244,6 @@ def load_saved_matches():
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE).fillna('')
         if not df.empty and 'תאריך' in df.columns:
-            # מיון המשחקים מהחדש לישן לפי תאריך
             df = df.sort_values(by='תאריך', ascending=False)
         return df.to_dict('records')
     return []
@@ -240,7 +259,7 @@ def save_match_to_file(match_data):
     current_data.insert(0, match_data)
     df = pd.DataFrame(current_data)
     if not df.empty and 'תאריך' in df.columns:
-        df = df.sort_values(by='תאריך', ascending=False) # שמירה ממוינת מהחדש לישן
+        df = df.sort_values(by='תאריך', ascending=False)
     df.to_csv(CSV_FILE, index=False)
     st.session_state.saved_matches = df.to_dict('records')
 
@@ -324,7 +343,6 @@ def search_teams_api(team_name):
                 team = item['team']
                 name = team['name']
                 
-                # סינון נבחרות צעירות באופן אוטומטי כדי להציג את הנבחרת הבוגרת
                 if any(u in name for u in [" U1", " U2", " U-1", " U-2", "Olympic", "Youth"]):
                     continue
                     
@@ -576,9 +594,10 @@ def render_match_details(match_id, theme_name):
     </div>
     """, unsafe_allow_html=True)
 
-# --- פריסת תפריט כפתור העיצוב ---
-col_empty, col_theme = st.columns([9, 1])
+# --- פריסת תפריט כפתור העיצוב (בתוך מסגרת שחורה משותפת) ---
+col_empty, col_theme = st.columns([8, 2])
 with col_theme:
+    st.markdown("<div class='theme-box-wrapper'>", unsafe_allow_html=True)
     st.radio(
         "עיצוב:", 
         ["כהה 🌙", "בהיר ☀️"], 
@@ -588,6 +607,7 @@ with col_theme:
         key="theme_radio", 
         on_change=change_theme
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # --- הלוגו ---
 st.markdown("""
