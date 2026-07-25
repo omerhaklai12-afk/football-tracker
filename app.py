@@ -39,7 +39,7 @@ if 'search_results' not in st.session_state: st.session_state.search_results = [
 if 't1_opts' not in st.session_state: st.session_state.t1_opts = []
 if 't2_opts' not in st.session_state: st.session_state.t2_opts = []
 
-# --- בניית ה-CSS הדינמי המותאם למובייל ומסגרת הסטייל ---
+# --- בניית ה-CSS הדינמי המותאם למובייל ולמסגרת הבהיר/כהה ---
 is_light = (st.session_state.theme == "בהיר ☀️")
 
 bg_color = "#f8f9fa" if is_light else "#0e1117"
@@ -49,8 +49,8 @@ card_border = "1px solid #e9ecef" if is_light else "1px solid rgba(255,255,255,0
 radio_bg = "#e9ecef" if is_light else "rgba(255, 255, 255, 0.05)"
 radio_hover = "#dee2e6" if is_light else "rgba(255, 255, 255, 0.1)"
 shadow_base = "0 4px 6px rgba(0,0,0,0.05)" if is_light else "0 4px 15px rgba(0,0,0,0.3)"
-box_border = "2px solid #212529" if is_light else "2px solid rgba(255, 255, 255, 0.25)"
-box_bg = "#e9ecef" if is_light else "#161b22"
+box_border = "2px solid #333333" if is_light else "2px solid rgba(255, 255, 255, 0.2)"
+box_bg = "#ffffff" if is_light else "#161b22"
 
 st.markdown(f"""
 <style>
@@ -106,7 +106,7 @@ summary .material-icons {{
     align-items: center;
     justify-content: center;
     gap: 20px;
-    margin-bottom: 25px;
+    margin-bottom: 35px;
     margin-top: 10px;
     direction: rtl;
     flex-wrap: wrap;
@@ -144,19 +144,20 @@ summary .material-icons {{
     margin-top: 4px;
 }}
 
-/* מסגרת קשיחה ואסתטית מסביב לכפתורי מצב יום/לילה */
-.theme-container {{
+/* מסגרת מסביב לכפתורי מצב יום/לילה */
+.theme-box-wrapper {{
     border: {box_border};
     background-color: {box_bg};
     border-radius: 16px;
-    padding: 4px 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    padding: 8px 12px;
     display: inline-block;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    margin-bottom: 10px;
     width: 100%;
     text-align: center;
 }}
 
-/* עיצוב כפתורי ניווט ומעבר עמודות חלק וזורם */
+/* עיצוב כפתורי ניווט בסגנון מודרני */
 div.row-widget.stRadio > div {{
     flex-direction: row;
     justify-content: center;
@@ -174,24 +175,26 @@ div.row-widget.stRadio > div > label {{
     cursor: pointer;
     font-weight: 700;
     font-size: 0.95em;
-    transition: all 0.25s ease-in-out;
+    transition: all 0.3s ease;
 }}
 div.row-widget.stRadio > div > label[data-checked="true"] {{
     background-color: {'#ffffff' if is_light else '#3a3f50'} !important;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }}
 div.row-widget.stRadio > div > label:hover {{
     background-color: {radio_hover} !important;
 }}
 
-/* מעבר עמודות חלק ונעים */
-[data-testid="stHorizontalBlock"] {{
-    align-items: center;
-    gap: 12px;
-    transition: all 0.3s ease;
+/* עיצובים מיוחדים לאזור החיפוש */
+.vs-badge {{
+    text-align: center;
+    margin-top: 5px;
+    font-size: 1.5em;
+    font-weight: 900;
+    color: {'#adb5bd' if is_light else '#6c757d'};
 }}
 
-/* כרטיסיות הסטטיסטיקה והמשחקים */
+/* אנימציות לכרטיסיות הסטטיסטיקה והמשחקים */
 .stat-card, .match-card {{
     background: {card_bg};
     border-radius: 16px;
@@ -202,7 +205,6 @@ div.row-widget.stRadio > div > label:hover {{
     margin-bottom: 12px;
     width: 100%;
     box-sizing: border-box;
-    transition: transform 0.2s ease;
 }}
 .stat-card {{
     text-align: center;
@@ -226,7 +228,6 @@ div.row-widget.stRadio > div > label:hover {{
     border-radius: 12px !important;
     font-weight: bold !important;
     width: 100% !important;
-    transition: all 0.2s ease;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -587,20 +588,10 @@ def render_match_details(match_id, theme_name):
     </div>
     """, unsafe_allow_html=True)
 
-# --- שורת עליונה משולבת (לוגו + מסגרת כפתורי בהיר/כהה בתוכה) ---
-col_logo, col_theme = st.columns([7, 3])
-with col_logo:
-    st.markdown("""
-    <div class="app-logo-wrapper">
-        <div class="app-icon-box">⚽</div>
-        <div class="app-text-box">
-            <div class="app-text-main">יומן המשחקים</div>
-            <div class="app-text-sub">הכדורגל שלי</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+# --- פריסת תפריט כפתור העיצוב (בתוך מסגרת שחורה משותפת) ---
+col_empty, col_theme = st.columns([7, 3])
 with col_theme:
-    st.markdown("<div class='theme-container'>", unsafe_allow_html=True)
+    st.markdown("<div class='theme-box-wrapper'>", unsafe_allow_html=True)
     st.radio(
         "עיצוב:", 
         ["כהה 🌙", "בהיר ☀️"], 
@@ -611,6 +602,17 @@ with col_theme:
         on_change=change_theme
     )
     st.markdown("</div>", unsafe_allow_html=True)
+
+# --- הלוגו ---
+st.markdown("""
+<div class="app-logo-wrapper">
+    <div class="app-icon-box">⚽</div>
+    <div class="app-text-box">
+        <div class="app-text-main">יומן המשחקים</div>
+        <div class="app-text-sub">הכדורגל שלי</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 nav_choice = st.radio("ניווט", ["📋 יומן המשחקים", "🔍 חיפוש והוספת משחקים", "📊 סטטיסטיקות אישיות"], index=1, horizontal=True, label_visibility="collapsed")
 st.write("---")
