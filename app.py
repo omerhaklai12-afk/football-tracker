@@ -222,7 +222,11 @@ div.row-widget.stRadio > div > label:hover {{
 # --- פונקציות לניהול קובץ השמירה של היומן ---
 def load_saved_matches():
     if os.path.exists(CSV_FILE):
-        return pd.read_csv(CSV_FILE).fillna('').to_dict('records')
+        df = pd.read_csv(CSV_FILE).fillna('')
+        if not df.empty and 'תאריך' in df.columns:
+            # מיון המשחקים מהישן לחדש לפי תאריך
+            df = df.sort_values(by='תאריך', ascending=True)
+        return df.to_dict('records')
     return []
 
 if not st.session_state.saved_matches:
@@ -233,10 +237,12 @@ def save_match_to_file(match_data):
     if 'הייתי_במשחק' not in match_data:
         match_data['הייתי_במשחק'] = False
         
-    current_data.insert(0, match_data)
+    current_data.append(match_data) # הוספה לסוף הרשימה
     df = pd.DataFrame(current_data)
+    if not df.empty and 'תאריך' in df.columns:
+        df = df.sort_values(by='תאריך', ascending=True) # שמירה ממוינת מהישן לחדש
     df.to_csv(CSV_FILE, index=False)
-    st.session_state.saved_matches = current_data
+    st.session_state.saved_matches = df.to_dict('records')
 
 def delete_match_from_file(match_id):
     current_data = load_saved_matches()
@@ -245,8 +251,10 @@ def delete_match_from_file(match_id):
     df = pd.DataFrame(current_data)
     if df.empty:
         df = pd.DataFrame(columns=["ID_משחק", "תאריך", "תחרות", "מארחת", "תוצאה", "אורחת", "אצטדיון", "לוגו_מארחת", "לוגו_אורחת", "לוגו_תחרות", "הייתי_במשחק"])
+    else:
+        df = df.sort_values(by='תאריך', ascending=True)
     df.to_csv(CSV_FILE, index=False)
-    st.session_state.saved_matches = current_data
+    st.session_state.saved_matches = df.to_dict('records')
     
     img_path = os.path.join(UPLOAD_DIR, f"{match_id}.png")
     if os.path.exists(img_path):
@@ -259,8 +267,10 @@ def update_attendance_in_file(match_id, attended_status):
             m['הייתי_במשחק'] = attended_status
             break
     df = pd.DataFrame(current_data)
+    if not df.empty and 'תאריך' in df.columns:
+        df = df.sort_values(by='תאריך', ascending=True)
     df.to_csv(CSV_FILE, index=False)
-    st.session_state.saved_matches = current_data
+    st.session_state.saved_matches = df.to_dict('records')
 
 @st.dialog("אישור מחיקה")
 def delete_confirmation_dialog(match_id, match_desc):
