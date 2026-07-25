@@ -39,7 +39,7 @@ if 'search_results' not in st.session_state: st.session_state.search_results = [
 if 't1_opts' not in st.session_state: st.session_state.t1_opts = []
 if 't2_opts' not in st.session_state: st.session_state.t2_opts = []
 
-# --- בניית ה-CSS הדינמי המותאם למובייל ולמסגרת המאוחדת ---
+# --- בניית ה-CSS הדינמי המותאם למובייל ---
 is_light = (st.session_state.theme == "בהיר ☀️")
 
 bg_color = "#f8f9fa" if is_light else "#0e1117"
@@ -49,8 +49,7 @@ card_border = "1px solid #e9ecef" if is_light else "1px solid rgba(255,255,255,0
 radio_bg = "#e9ecef" if is_light else "rgba(255, 255, 255, 0.05)"
 radio_hover = "#dee2e6" if is_light else "rgba(255, 255, 255, 0.1)"
 shadow_base = "0 4px 6px rgba(0,0,0,0.05)" if is_light else "0 4px 15px rgba(0,0,0,0.3)"
-box_border = "2px solid #333333" if is_light else "2px solid rgba(255, 255, 255, 0.2)"
-box_bg = "#ffffff" if is_light else "#161b22"
+shadow_hover = "0 10px 20px rgba(0,0,0,0.1)" if is_light else "0 10px 25px rgba(0,0,0,0.5)"
 
 st.markdown(f"""
 <style>
@@ -80,11 +79,6 @@ footer {{visibility: hidden;}}
 
 .stMarkdown, .stText, p, label, h1, h2, h3, h4, h5, h6, li {{
     color: {text_color} !important;
-}}
-
-/* העלמת כותרת התווית של הסטריםליט לחלוטין כדי שלא תופיע מעל המסגרת */
-div[data-testid="stRadio"] > label {{
-    display: none !important;
 }}
 
 /* העלמת הטקסט הבעייתי והאייקונים המובנים מאחורי האקורדיון */
@@ -149,34 +143,24 @@ summary .material-icons {{
     margin-top: 4px;
 }}
 
-/* מסגרת תחום סגורה מסביב לכפתורי מצב יום/לילה */
-.theme-box-wrapper {{
-    border: {box_border};
-    background-color: {box_bg};
-    border-radius: 16px;
-    padding: 8px 12px;
-    display: inline-block;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    margin-bottom: 10px;
-    direction: rtl;
-}}
-
-/* כפיית כפתורי הרדיו להיות בשורה אופקית בתוך המסגרת */
+/* עיצוב כפתורי ניווט בסגנון מודרני */
 div.row-widget.stRadio > div {{
-    flex-direction: row !important;
-    justify-content: center !important;
-    background-color: transparent !important;
-    padding: 0px !important;
-    gap: 10px !important;
-    box-shadow: none !important;
+    flex-direction: row;
+    justify-content: center;
+    background-color: {radio_bg};
+    padding: 6px;
+    border-radius: 30px;
+    gap: 5px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    flex-wrap: wrap;
 }}
 div.row-widget.stRadio > div > label {{
-    background-color: {radio_bg} !important;
-    padding: 6px 14px !important;
-    border-radius: 20px !important;
+    background-color: transparent !important;
+    padding: 8px 18px !important;
+    border-radius: 22px !important;
     cursor: pointer;
     font-weight: 700;
-    font-size: 0.9em;
+    font-size: 0.95em;
     transition: all 0.3s ease;
 }}
 div.row-widget.stRadio > div > label[data-checked="true"] {{
@@ -590,10 +574,9 @@ def render_match_details(match_id, theme_name):
     </div>
     """, unsafe_allow_html=True)
 
-# --- פריסת תפריט כפתור העיצוב (בתוך מסגרת מרובעת משותפת ללא כותרת מעל) ---
-col_empty, col_theme = st.columns([6, 4])
+# --- פריסת תפריט כפתור העיצוב הרגיל (ללא מסגרת) ---
+col_empty, col_theme = st.columns([9, 1])
 with col_theme:
-    st.markdown("<div class='theme-box-wrapper'>", unsafe_allow_html=True)
     st.radio(
         "עיצוב:", 
         ["כהה 🌙", "בהיר ☀️"], 
@@ -603,7 +586,6 @@ with col_theme:
         key="theme_radio", 
         on_change=change_theme
     )
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # --- הלוגו ---
 st.markdown("""
