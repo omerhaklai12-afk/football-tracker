@@ -7,7 +7,7 @@ from deep_translator import GoogleTranslator
 from datetime import datetime
 from collections import Counter
 
-API_KEY = "7b8cd7941e0c008eb154b4ca358d3e72"
+API_KEY = "3fa9e2a988fc2f071b877bafc97d8078"
 CSV_FILE = "my_games.csv"
 THEME_FILE = "theme.txt"
 UPLOAD_DIR = "uploads"
