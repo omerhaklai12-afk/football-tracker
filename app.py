@@ -240,7 +240,7 @@ def delete_match_from_file(match_id):
     
     df = pd.DataFrame(current_data)
     if df.empty:
-        df = pd.DataFrame(columns=["ID_משחק", "תאריך", "תחרות", "מארחת", "תוצאה", "אורחת", "אצטדיון", "לוגו_מארחת", "לוגו_אורחת", "לוגו_תחרות", "הייתי_במשחק"])
+        df = pd.DataFrame(columns=["ID_משחק", "תאריך", "תחרות", "מארחת", "תוצאה", "אורחת", "אצטדיון", "לוגו_מארחת", "לוגו_אורחת", "לוגו_תחרות", "הייתי_במשחק", "אירועים_גולש"])
     else:
         df = df.sort_values(by='תאריך', ascending=False)
     df.to_csv(CSV_FILE, index=False)
@@ -749,7 +749,6 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                     st.session_state.t1_opts = []
                     st.session_state.t2_opts = []
 
-    # בדיקה שהתוצאות הן רשימות תקינות של מילונים לפני הצגת ה-selectbox
     valid_t1 = isinstance(st.session_state.t1_opts, list) and len(st.session_state.t1_opts) > 0 and all(isinstance(x, dict) for x in st.session_state.t1_opts)
     valid_t2 = isinstance(st.session_state.t2_opts, list) and len(st.session_state.t2_opts) > 0 and all(isinstance(x, dict) for x in st.session_state.t2_opts)
 
@@ -808,6 +807,14 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                     st.button("✅", key=f"saved_{match_id}_{idx}", disabled=True, use_container_width=True)
                 else:
                     if st.button("➕", key=f"add_{match_id}_{idx}", use_container_width=True):
+                        # שליפת פרטי המשחק פעם אחת בלבד בעת ההוספה ושמירתם בקובץ
+                        with st.spinner("שומר משחק ונתונים במאגר..."):
+                            details = get_fixture_details(match_id)
+                            events_list = []
+                            if details and details.get('results', 0) > 0:
+                                events_list = details['response'][0].get('events', [])
+                        
+                        import json
                         match_data = {
                             "ID_משחק": match_id,
                             "תאריך": date,
@@ -819,7 +826,8 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                             "לוגו_מארחת": home_logo,
                             "לוגו_אורחת": away_logo,
                             "לוגו_תחרות": league_logo,
-                            "הייתי_במשחק": False
+                            "הייתי_במשחק": False,
+                            "אירועים_גולש": json.dumps(events_list, ensure_ascii=False)
                         }
                         save_match_to_file(match_data)
                         st.rerun()
@@ -849,6 +857,7 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             7: "יולי", 8: "אוגוסט", 9: "ספטמבר", 10: "אוקטובר", 11: "נובמבר", 12: "דצמבר"
         }
 
+        import json
         for match in saved:
             if match.get('הייתי_במשחק', False):
                 total_attended += 1
@@ -884,13 +893,12 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             stadium = match.get('אצטדיון', '')
             if stadium and stadium != 'None': stadiums_counter[stadium] += 1
 
-            # שליפת פרטי האירועים עבור מלך שערים וכרטיסים אדומים
-            m_id = match.get('ID_משחק')
-            if m_id:
-                details = get_fixture_details(m_id)
-                if details and details.get('results', 0) > 0:
-                    match_obj = details['response'][0]
-                    for ev in match_obj.get('events', []):
+            # שליפת הנתונים ישירות מקובץ השמירה המקומי (ללא קריאות נוספות ל-API!)
+            events_json = match.get('אירועים_גולש', '')
+            if events_json:
+                try:
+                    events_list = json.loads(events_json)
+                    for ev in events_list:
                         ev_type = ev.get('type')
                         ev_detail = str(ev.get('detail', ''))
                         comments = str(ev.get('comments', ''))
@@ -902,6 +910,8 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
                                 
                         if ev_type == 'Card' and 'Red' in ev_detail:
                             total_red_cards += 1
+                except:
+                    pass
             
         avg_goals = round(total_goals / total_matches, 2) if total_matches > 0 else 0
         top_team = teams_counter.most_common(1)[0][0] if teams_counter else "אין נתונים"
