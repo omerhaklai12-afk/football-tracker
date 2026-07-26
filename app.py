@@ -280,11 +280,8 @@ def get_fixture_details(match_id):
     url = "https://v3.football.api-sports.io/fixtures"
     querystring = {"id": match_id}
     headers = {"x-apisports-key": API_KEY}
-    try:
-        response = requests.get(url, headers=headers, params=querystring)
-        return response.json()
-    except:
-        return {}
+    response = requests.get(url, headers=headers, params=querystring)
+    return response.json()
 
 def get_stat_num(val):
     if val is None or val == 'None' or val == '': return -1
@@ -734,32 +731,22 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                 
                 if res1 == "DAILY_LIMIT" or res2 == "DAILY_LIMIT":
                     st.error("🛑 הגעת למגבלה היומית של השרת!")
-                    st.session_state.t1_opts = []
-                    st.session_state.t2_opts = []
                 elif res1 == "RATE_LIMIT" or res2 == "RATE_LIMIT":
                     st.warning("⏳ חרגת ממגבלת השרת לדקה. המתן רגע ונסה שוב.")
-                    st.session_state.t1_opts = []
-                    st.session_state.t2_opts = []
-                elif isinstance(res1, list) and isinstance(res2, list):
+                elif not res1 or not res2:
+                    st.info("לא מצאנו את הקבוצות. נסה לאיית באנגלית.")
+                else:
                     st.session_state.t1_opts = res1
                     st.session_state.t2_opts = res2
                     st.session_state.search_results = []
-                else:
-                    st.error("⚠️ שגיאה בחיפוש הקבוצות. נסה שוב.")
-                    st.session_state.t1_opts = []
-                    st.session_state.t2_opts = []
 
-    # הגנה מפני קראש אם האופציות אינן מילונים תקינים
-    valid_t1 = isinstance(st.session_state.t1_opts, list) and all(isinstance(x, dict) for x in st.session_state.t1_opts)
-    valid_t2 = isinstance(st.session_state.t2_opts, list) and all(isinstance(x, dict) for x in st.session_state.t2_opts)
-
-    if valid_t1 and valid_t2 and len(st.session_state.t1_opts) > 0 and len(st.session_state.t2_opts) > 0:
+    if st.session_state.t1_opts and st.session_state.t2_opts:
         st.markdown("<hr style='margin: 20px 0; border: 0; border-top: 2px dashed rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
         c1, c2 = st.columns(2)
         with c1:
-            t1_sel = st.selectbox("בחר קבוצה 1:", options=st.session_state.t1_opts, format_func=lambda x: f"{x.get('name', '')} ({x.get('country', '')})")
+            t1_sel = st.selectbox("בחר קבוצה 1:", options=st.session_state.t1_opts, format_func=lambda x: f"{x['name']} ({x['country']})")
         with c2:
-            t2_sel = st.selectbox("בחר קבוצה 2:", options=st.session_state.t2_opts, format_func=lambda x: f"{x.get('name', '')} ({x.get('country', '')})")
+            t2_sel = st.selectbox("בחר קבוצה 2:", options=st.session_state.t2_opts, format_func=lambda x: f"{x['name']} ({x['country']})")
             
         st.write("")
         _, btn_col2, _ = st.columns([1, 2, 1])
@@ -840,8 +827,6 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         teams_counter = Counter()
         stadiums_counter = Counter()
         months_counter = Counter()
-        scorers_counter = Counter()
-        total_red_cards = 0
         team_logos = {}
         
         hebrew_months = {
@@ -883,32 +868,12 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             
             stadium = match.get('אצטדיון', '')
             if stadium and stadium != 'None': stadiums_counter[stadium] += 1
-
-            # שליפת פרטי האירועים עבור מלך שערים וכרטיסים אדומים
-            m_id = match.get('ID_משחק')
-            if m_id:
-                details = get_fixture_details(m_id)
-                if details and details.get('results', 0) > 0:
-                    match_obj = details['response'][0]
-                    for ev in match_obj.get('events', []):
-                        ev_type = ev.get('type')
-                        ev_detail = str(ev.get('detail', ''))
-                        comments = str(ev.get('comments', ''))
-                        
-                        if ev_type in ['Goal', 'Penalty'] and ev_detail != 'Own Goal' and 'Penalty Shootout' not in comments:
-                            p_name = ev.get('player', {}).get('name')
-                            if p_name:
-                                scorers_counter[p_name] += 1
-                                
-                        if ev_type == 'Card' and 'Red' in ev_detail:
-                            total_red_cards += 1
             
         avg_goals = round(total_goals / total_matches, 2) if total_matches > 0 else 0
         top_team = teams_counter.most_common(1)[0][0] if teams_counter else "אין נתונים"
         top_team_logo = team_logos.get(top_team, "")
         top_team_display = f"<img src='{top_team_logo}' width='28' style='vertical-align: middle; margin-left: 6px;'> {top_team}" if top_team_logo else top_team
         top_month = months_counter.most_common(1)[0][0] if months_counter else "אין נתונים"
-        top_scorer = scorers_counter.most_common(1)[0] if scorers_counter else None
         top_stadium = stadiums_counter.most_common(1)[0][0] if stadiums_counter else "אין נתונים"
         
         total_hours = total_matches * 2
@@ -925,14 +890,11 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         with col4:
             st.markdown(f"<div class='stat-card'><div class='stat-title'>משחקי יציע</div><div class='stat-value' style='font-size: 1.6em; color: #ffc107 !important;'>🎟️ {total_attended}</div></div>", unsafe_allow_html=True)
 
-        col5, col6, col7 = st.columns(3)
+        col5, col6 = st.columns(2)
         with col5:
             st.markdown(f"<div class='stat-card'><div class='stat-title'>חודש שיא בצפייה</div><div class='stat-value' style='font-size: 1.3em;'>📅 {top_month}</div></div>", unsafe_allow_html=True)
         with col6:
-            scorer_text = f"{top_scorer[0]} ({top_scorer[1]} שערים)" if top_scorer else "אין נתונים"
-            st.markdown(f"<div class='stat-card'><div class='stat-title'>מלך השערים שלך</div><div class='stat-value' style='font-size: 1.1em;'>👑 {scorer_text}</div></div>", unsafe_allow_html=True)
-        with col7:
-            st.markdown(f"<div class='stat-card'><div class='stat-title'>כרטיסים אדומים</div><div class='stat-value' style='font-size: 1.6em; color: #dc3545 !important;'>🟥 {total_red_cards}</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='stat-card'><div class='stat-title'>אצטדיון מוביל</div><div class='stat-value' style='font-size: 1.1em;'>📍 {top_stadium}</div></div>", unsafe_allow_html=True)
 
         # מחשבון שעות עם סימן ~
         st.markdown(f"""
@@ -957,8 +919,6 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
 🥅 סך הכל שערים שראיתי: {total_goals} ({avg_goals} למשחק!)
 🛡️ הקבוצה הנצפית ביותר: {top_team}
 📅 חודש השיא שלי: {top_month}
-👑 מלך השערים שלי: {top_scorer[0] if top_scorer else 'אין'}
-🟥 כרטיסים אדומים שראיתי: {total_red_cards}
 📍 האצטדיון שלי: {top_stadium}
 
 הופק באמצעות "יומן משחקי הכדורגל שלי" 🏆"""
