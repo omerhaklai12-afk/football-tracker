@@ -827,6 +827,8 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         teams_counter = Counter()
         stadiums_counter = Counter()
         months_counter = Counter()
+        scorers_counter = Counter()
+        total_red_cards = 0
         team_logos = {}
         
         hebrew_months = {
@@ -868,12 +870,32 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             
             stadium = match.get('אצטדיון', '')
             if stadium and stadium != 'None': stadiums_counter[stadium] += 1
+
+            # חישוב שערים וכרטיסים אדומים
+            m_id = match.get('ID_משחק')
+            if m_id:
+                details = get_fixture_details(m_id)
+                if details and details.get('results', 0) > 0:
+                    match_obj = details['response'][0]
+                    for ev in match_obj.get('events', []):
+                        ev_type = ev.get('type')
+                        ev_detail = str(ev.get('detail', ''))
+                        comments = str(ev.get('comments', ''))
+                        
+                        if ev_type in ['Goal', 'Penalty'] and ev_detail != 'Own Goal' and 'Penalty Shootout' not in comments:
+                            p_name = ev.get('player', {}).get('name')
+                            if p_name:
+                                scorers_counter[p_name] += 1
+                                
+                        if ev_type == 'Card' and 'Red' in ev_detail:
+                            total_red_cards += 1
             
         avg_goals = round(total_goals / total_matches, 2) if total_matches > 0 else 0
         top_team = teams_counter.most_common(1)[0][0] if teams_counter else "אין נתונים"
         top_team_logo = team_logos.get(top_team, "")
         top_team_display = f"<img src='{top_team_logo}' width='28' style='vertical-align: middle; margin-left: 6px;'> {top_team}" if top_team_logo else top_team
         top_month = months_counter.most_common(1)[0][0] if months_counter else "אין נתונים"
+        top_scorer = scorers_counter.most_common(1)[0] if scorers_counter else None
         top_stadium = stadiums_counter.most_common(1)[0][0] if stadiums_counter else "אין נתונים"
         
         total_hours = total_matches * 2
@@ -890,11 +912,14 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         with col4:
             st.markdown(f"<div class='stat-card'><div class='stat-title'>משחקי יציע</div><div class='stat-value' style='font-size: 1.6em; color: #ffc107 !important;'>🎟️ {total_attended}</div></div>", unsafe_allow_html=True)
 
-        col5, col6 = st.columns(2)
+        col5, col6, col7 = st.columns(3)
         with col5:
             st.markdown(f"<div class='stat-card'><div class='stat-title'>חודש שיא בצפייה</div><div class='stat-value' style='font-size: 1.3em;'>📅 {top_month}</div></div>", unsafe_allow_html=True)
         with col6:
-            st.markdown(f"<div class='stat-card'><div class='stat-title'>אצטדיון מוביל</div><div class='stat-value' style='font-size: 1.1em;'>📍 {top_stadium}</div></div>", unsafe_allow_html=True)
+            scorer_text = f"{top_scorer[0]} ({top_scorer[1]} שערים)" if top_scorer else "אין נתונים"
+            st.markdown(f"<div class='stat-card'><div class='stat-title'>מלך השערים שלך</div><div class='stat-value' style='font-size: 1.1em;'>👑 {scorer_text}</div></div>", unsafe_allow_html=True)
+        with col7:
+            st.markdown(f"<div class='stat-card'><div class='stat-title'>כרטיסים אדומים</div><div class='stat-value' style='font-size: 1.6em; color: #dc3545 !important;'>🟥 {total_red_cards}</div></div>", unsafe_allow_html=True)
 
         # מחשבון שעות עם סימן ~
         st.markdown(f"""
@@ -919,6 +944,8 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
 🥅 סך הכל שערים שראיתי: {total_goals} ({avg_goals} למשחק!)
 🛡️ הקבוצה הנצפית ביותר: {top_team}
 📅 חודש השיא שלי: {top_month}
+👑 מלך השערים שלי: {top_scorer[0] if top_scorer else 'אין'}
+🟥 כרטיסים אדומים שראיתי: {total_red_cards}
 📍 האצטדיון שלי: {top_stadium}
 
 הופק באמצעות "יומן משחקי הכדורגל שלי" 🏆"""
