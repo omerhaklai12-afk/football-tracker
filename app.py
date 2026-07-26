@@ -49,19 +49,16 @@ card_border = "1px solid #e9ecef" if is_light else "1px solid rgba(255,255,255,0
 radio_bg = "#e9ecef" if is_light else "rgba(255, 255, 255, 0.05)"
 radio_hover = "#dee2e6" if is_light else "rgba(255, 255, 255, 0.1)"
 shadow_base = "0 4px 6px rgba(0,0,0,0.05)" if is_light else "0 4px 15px rgba(0,0,0,0.3)"
-shadow_hover = "0 10px 20px rgba(0,0,0,0.1)" if is_light else "0 10px 25px rgba(0,0,0,0.5)"
 
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap');
 
-/* מניעת גלילה אופקית וחסימת חריגות רוחב במסכים צרים */
 html, body, [data-testid="stAppViewContainer"] {{
     overflow-x: hidden !important;
     max-width: 100vw !important;
 }}
 
-/* החלת הפונט רק על טקסטים ולא על אייקונים */
 html, body, div, p, label, h1, h2, h3, h4, h5, h6, li, button, input, span {{
     font-family: 'Heebo', sans-serif;
 }}
@@ -81,7 +78,6 @@ footer {{visibility: hidden;}}
     color: {text_color} !important;
 }}
 
-/* העלמת הטקסט הבעייתי והאייקונים המובנים מאחורי האקורדיון */
 details > summary {{
     list-style: none !important;
 }}
@@ -99,7 +95,6 @@ summary .material-icons {{
     visibility: hidden !important;
 }}
 
-/* עיצוב הלוגו */
 .app-logo-wrapper {{
     display: flex;
     align-items: center;
@@ -143,7 +138,6 @@ summary .material-icons {{
     margin-top: 4px;
 }}
 
-/* עיצוב כפתורי ניווט בסגנון מודרני */
 div.row-widget.stRadio > div {{
     flex-direction: row;
     justify-content: center;
@@ -171,7 +165,6 @@ div.row-widget.stRadio > div > label:hover {{
     background-color: {radio_hover} !important;
 }}
 
-/* עיצובים מיוחדים לאזור החיפוש */
 .vs-badge {{
     text-align: center;
     margin-top: 5px;
@@ -180,7 +173,6 @@ div.row-widget.stRadio > div > label:hover {{
     color: {'#adb5bd' if is_light else '#6c757d'};
 }}
 
-/* אנימציות לכרטיסיות הסטטיסטיקה והמשחקים */
 .stat-card, .match-card {{
     background: {card_bg};
     border-radius: 16px;
@@ -209,7 +201,6 @@ div.row-widget.stRadio > div > label:hover {{
     text-transform: uppercase;
 }}
 
-/* כפתורים משודרגים */
 .stButton > button {{
     border-radius: 12px !important;
     font-weight: bold !important;
@@ -219,7 +210,7 @@ div.row-widget.stRadio > div > label:hover {{
 """, unsafe_allow_html=True)
 
 
-# --- פונקציות לניהול קובץ השמירה של היומן (מיון מהחדש לישן) ---
+# --- פונקציות לניהול קובץ השמירה של היומן ---
 def load_saved_matches():
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE).fillna('')
@@ -365,7 +356,6 @@ def get_colored_marker(text, bg_marker):
 def render_match_details(match_id, theme_name):
     is_lht = (theme_name == "בהיר ☀️")
     tc = "#333333" if is_lht else "white"
-    bg_info = "#f8f9fa" if is_lht else "rgba(255,255,255,0.05)"
     
     with st.spinner("טוען נתונים..."):
         details_data = get_fixture_details(match_id)
@@ -552,27 +542,6 @@ def render_match_details(match_id, theme_name):
             st.markdown("<hr style='margin: 10px 0; border: 0; border-top: 1px solid rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
     else:
         st.markdown("<div style='text-align: center; color: gray !important;'>אין סטטיסטיקות זמינות למשחק זה.</div>", unsafe_allow_html=True)
-        
-    st.divider()
-    st.markdown("<h4 style='text-align: center; margin-bottom: 15px; color: gray !important; font-weight: 900;'>מידע על המשחק</h4>", unsafe_allow_html=True)
-    match_date_str = full_match['fixture']['date']
-    try:
-        dt = datetime.strptime(match_date_str, "%Y-%m-%dT%H:%M:%S%z")
-        formatted_date = dt.strftime("%d/%m/%Y")
-    except:
-        formatted_date = match_date_str[:10]
-        
-    stadium = full_match['fixture']['venue']['name']
-    c_league_logo = full_match['league']['logo']
-    c_round_display = f" ({c_round})" if c_round else ""
-    
-    st.markdown(f"""
-    <div style='text-align: center; font-size: 1em; line-height: 1.8; background-color: {bg_info}; color: {tc} !important; padding: 15px; border-radius: 12px; border: 1px solid rgba(128,128,128,0.1); font-weight: 600;'>
-        📅 <b>תאריך:</b> {formatted_date} <br>
-        🏆 <b>תחרות:</b> <img src='{c_league_logo}' width='20' style='vertical-align: middle; margin-left: 4px; border-radius: 50%;'> {c_league}{c_round_display} <br>
-        🏟️ <b>אצטדיון:</b> {stadium}
-    </div>
-    """, unsafe_allow_html=True)
 
 # --- פריסת תפריט כפתור העיצוב ---
 col_empty, col_theme = st.columns([9, 1])
@@ -601,7 +570,6 @@ st.markdown("""
 nav_choice = st.radio("ניווט", ["📋 יומן המשחקים", "🔍 חיפוש והוספת משחקים", "📊 סטטיסטיקות אישיות"], index=1, horizontal=True, label_visibility="collapsed")
 st.write("---")
 
-# --- איפוס חיפוש בעת מעבר מסך ---
 if nav_choice != "🔍 חיפוש והוספת משחקים":
     st.session_state.t1_opts = []
     st.session_state.t2_opts = []
@@ -613,7 +581,6 @@ if nav_choice != "🔍 חיפוש והוספת משחקים":
 if nav_choice == "📋 יומן המשחקים":
     if len(st.session_state.saved_matches) > 0:
         
-        # --- פיצ'ר "ביום הזה" (Memories) ---
         today = datetime.now()
         memories = []
         for match in st.session_state.saved_matches:
@@ -632,20 +599,10 @@ if nav_choice == "📋 יומן המשחקים":
                 a_team = mem_match.get('אורחת', '')
                 score = mem_match.get('תוצאה', '0 - 0')
                 attended = mem_match.get('הייתי_במשחק', False)
-                
                 years_str = "שנה" if years == 1 else "שנתיים" if years == 2 else f"{years} שנים"
                 
                 if attended:
-                    try:
-                        h_g = int(score.split('-')[0].strip())
-                        a_g = int(score.split('-')[1].strip())
-                        if h_g > a_g: win_txt = f"ראיתי את {h_team} מנצחת"
-                        elif a_g > h_g: win_txt = f"ראיתי את {a_team} מנצחת"
-                        else: win_txt = f"ראיתי את המשחק ביניהן מסתיים בתיקו"
-                    except:
-                        win_txt = f"ראיתי אותן משחקות"
-                    
-                    msg = f"היום לפני {years_str} הייתי באצטדיון ו{win_txt} (תוצאה: {score})! 🏟️"
+                    msg = f"היום לפני {years_str} הייתי באצטדיון במשחק בין {h_team} ל-{a_team} (תוצאה: {score})! 🏟️"
                 else:
                     msg = f"היום לפני {years_str} ראיתי מהספה את {h_team} נגד {a_team} והתוצאה הייתה {score} 📺"
                     
@@ -661,12 +618,9 @@ if nav_choice == "📋 יומן המשחקים":
             st.write("---")
 
         with st.container():
-            st.markdown("<h4 style='text-align: right; color: gray !important; font-size: 1.1em;'>חיפוש וסינון ביומן 🔍</h4>", unsafe_allow_html=True)
             col_search, col_filter = st.columns(2)
-            
             with col_search:
                 search_query = st.text_input("חיפוש קבוצה או אצטדיון...", "")
-            
             with col_filter:
                 all_comps = list(set([m.get('תחרות', '') for m in st.session_state.saved_matches if m.get('תחרות', '')]))
                 selected_comp = st.selectbox("סנן לפי תחרות:", ["כל התחרויות"] + all_comps)
@@ -678,15 +632,11 @@ if nav_choice == "📋 יומן המשחקים":
             match_str = f"{match.get('מארחת', '')} {match.get('אורחת', '')} {match.get('אצטדיון', '')}".lower()
             text_match = search_query.lower() in match_str
             comp_match = (selected_comp == "כל התחרויות" or match.get('תחרות', '') == selected_comp)
-            
             if text_match and comp_match:
                 filtered_matches.append(match)
         
         st.markdown(f"<p style='color: gray !important; font-size: 0.9em; font-weight: bold;'>מציג {len(filtered_matches)} מתוך {len(st.session_state.saved_matches)} משחקים שמורים ביומן</p>", unsafe_allow_html=True)
         
-        if len(filtered_matches) == 0:
-            st.warning("לא נמצאו משחקים שתואמים לחיפוש שלך.")
-            
         for idx, match in enumerate(filtered_matches):
             date = match.get('תאריך', '')
             competition = match.get('תחרות', '')
@@ -701,11 +651,10 @@ if nav_choice == "📋 יומן המשחקים":
             attended = match.get('הייתי_במשחק', False)
             
             col_match, col_attend, col_del = st.columns([10, 3, 1])
-            
             with col_del:
                 st.write("")
                 st.write("") 
-                if st.button("🗑️", key=f"del_out_{match_id}", help="מחק משחק"):
+                if st.button("🗑️", key=f"del_out_{match_id}"):
                     delete_confirmation_dialog(match_id, f"{home_team} נגד {away_team}")
                     
             with col_attend:
@@ -715,8 +664,7 @@ if nav_choice == "📋 יומן המשחקים":
                 new_attended = st.checkbox("הייתי באצטדיון 🏟️", value=attended, key=f"att_{match_id}")
                 if new_attended != attended:
                     update_attendance_in_file(match_id, new_attended)
-                    if new_attended:
-                        st.balloons()
+                    if new_attended: st.balloons()
                     st.rerun()
 
             with col_match:
@@ -743,7 +691,6 @@ if nav_choice == "📋 יומן המשחקים":
                                 with open(img_path, "wb") as f:
                                     f.write(uploaded_file.getbuffer())
                                 st.rerun()
-            
             st.write("")
     else:
         st.info("הרשימה שלך ריקה. עבור למסך החיפוש כדי להתחיל!")
@@ -776,42 +723,25 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                 try:
                     t1_en = GoogleTranslator(source='auto', target='en').translate(team1_name)
                     t2_en = GoogleTranslator(source='auto', target='en').translate(team2_name)
-                except Exception:
-                    t1_en = team1_name
-                    t2_en = team2_name
+                except:
+                    t1_en, t2_en = team1_name, team2_name
 
                 res1 = search_teams_api(t1_en)
                 res2 = search_teams_api(t2_en)
                 
                 if res1 == "DAILY_LIMIT" or res2 == "DAILY_LIMIT":
-                    st.error("🛑 הגעת למגבלה היומית של השרת! (100 חיפושים ביום).")
-                    st.session_state.t1_opts = []
-                    st.session_state.t2_opts = []
+                    st.error("🛑 הגעת למגבלה היומית של השרת!")
                 elif res1 == "RATE_LIMIT" or res2 == "RATE_LIMIT":
-                    st.warning("⏳ הגעת למגבלת השרת לדקה. חכה חצי דקה ונסה שוב!")
-                    st.session_state.t1_opts = []
-                    st.session_state.t2_opts = []
-                elif res1 == "INVALID_KEY" or res2 == "INVALID_KEY":
-                    st.error("🔑 מפתח ה-API שלך שגוי או לא פעיל.")
-                    st.session_state.t1_opts = []
-                    st.session_state.t2_opts = []
-                elif res1 == "API_ERROR" or res2 == "API_ERROR" or res1 == "NETWORK_ERROR" or res2 == "NETWORK_ERROR":
-                    st.error("⚠️ יש בעיית תקשורת עם השרת.")
-                    st.session_state.t1_opts = []
-                    st.session_state.t2_opts = []
+                    st.warning("⏳ חרגת ממגבלת השרת לדקה. המתן רגע ונסה שוב.")
                 elif not res1 or not res2:
-                    st.info(f"לא מצאנו את הקבוצות. נסה לאיית באנגלית (כמו Al Hilal).")
-                    st.session_state.t1_opts = []
-                    st.session_state.t2_opts = []
+                    st.info("לא מצאנו את הקבוצות. נסה לאיית באנגלית.")
                 else:
                     st.session_state.t1_opts = res1
                     st.session_state.t2_opts = res2
-                    st.session_state.search_results = [] 
+                    st.session_state.search_results = []
 
     if st.session_state.t1_opts and st.session_state.t2_opts:
         st.markdown("<hr style='margin: 20px 0; border: 0; border-top: 2px dashed rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='text-align: center; font-weight: 900; font-size: 1.2em;'>🎯 בחר את הקבוצות המדויקות:</h4>", unsafe_allow_html=True)
-        
         c1, c2 = st.columns(2)
         with c1:
             t1_sel = st.selectbox("בחר קבוצה 1:", options=st.session_state.t1_opts, format_func=lambda x: f"{x['name']} ({x['country']})")
@@ -828,34 +758,19 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                 url = "https://v3.football.api-sports.io/fixtures/headtohead"
                 querystring = {"h2h": f"{t1_sel['id']}-{t2_sel['id']}"}
                 headers = {"x-apisports-key": API_KEY}
-                
                 response = requests.get(url, headers=headers, params=querystring)
                 data = response.json()
                 
-                if data.get('errors') and len(data['errors']) > 0:
-                    err = data['errors']
-                    if 'requests' in err: st.error("🛑 הגעת למגבלה היומית של השרת!")
-                    elif 'rateLimit' in err: st.warning("⏳ חרגת ממגבלת הקריאות לדקה.")
-                    else: st.error("⚠️ שגיאת שרת.")
-                elif data.get('results', 0) > 0:
+                if data.get('results', 0) > 0:
                     matches = data['response']
-                    finished_statuses = ['FT', 'AET', 'PEN']
-                    past_matches = [m for m in matches if m['fixture']['status']['short'] in finished_statuses]
-                    
-                    if len(past_matches) > 0:
-                        past_matches = sorted(past_matches, key=lambda x: x['fixture']['date'], reverse=True)
-                        st.session_state.search_results = past_matches
-                    else:
-                        st.session_state.search_results = []
-                        st.warning("לא נמצאו משחקים שהסתיימו בין הקבוצות האלו.")
+                    finished = [m for m in matches if m['fixture']['status']['short'] in ['FT', 'AET', 'PEN']]
+                    st.session_state.search_results = sorted(finished, key=lambda x: x['fixture']['date'], reverse=True)
                 else:
                     st.session_state.search_results = []
-                    st.warning("לא נמצאו משחקים בכלל בין הקבוצות האלו.")
+                    st.warning("לא נמצאו משחקים בין הקבוצות.")
 
     if len(st.session_state.search_results) > 0:
         st.write("---")
-        st.markdown("### תוצאות אחרונות שנמצאו:")
-        
         for idx, match in enumerate(st.session_state.search_results[:15]):
             date = match['fixture']['date'][:10]
             stadium = match['fixture']['venue']['name']
@@ -864,26 +779,22 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
             away_team = match['teams']['away']['name']
             home_goals = match['goals']['home']
             away_goals = match['goals']['away']
-            match_id = match['fixture']['id'] 
-            
+            match_id = match['fixture']['id']
             home_logo = match['teams']['home']['logo']
             away_logo = match['teams']['away']['logo']
-            league_logo = match['league']['logo'] 
+            league_logo = match['league']['logo']
             
             col_text, col_btn = st.columns([5, 1])
-            
             with col_text:
                 st.markdown(match_card_html(date, competition, stadium, home_team, away_team, f"{home_goals} - {away_goals}", home_logo, away_logo, league_logo, st.session_state.theme), unsafe_allow_html=True)
-                
             with col_btn:
                 st.write("")
                 st.write("")
                 is_saved = any(str(saved.get('ID_משחק')) == str(match_id) for saved in st.session_state.saved_matches)
-                
                 if is_saved:
-                    st.button("✅", key=f"saved_{match_id}_{idx}", disabled=True, use_container_width=True, help="נשמר")
+                    st.button("✅", key=f"saved_{match_id}_{idx}", disabled=True, use_container_width=True)
                 else:
-                    if st.button("➕", key=f"add_{match_id}_{idx}", use_container_width=True, help="הוסף ליומן"):
+                    if st.button("➕", key=f"add_{match_id}_{idx}", use_container_width=True):
                         match_data = {
                             "ID_משחק": match_id,
                             "תאריך": date,
@@ -907,20 +818,15 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
     st.markdown("<h3 style='text-align: center; margin-bottom: 25px; font-weight: 900; font-size: 1.5em;'>הסטטיסטיקות שלך 📈</h3>", unsafe_allow_html=True)
     
     saved = st.session_state.saved_matches
-    is_light = (st.session_state.theme == "בהיר ☀️")
-    
     if len(saved) == 0:
-        st.info("יומן המשחקים שלך עדיין ריק. חפש ושמור משחקים כדי לראות כאן נתונים מעניינים!")
+        st.info("יומן המשחקים שלך ריק עדיין.")
     else:
         total_matches = len(saved)
         total_goals = 0
         total_attended = 0
         teams_counter = Counter()
         stadiums_counter = Counter()
-        comps_counter = Counter()
         months_counter = Counter()
-        scorers_counter = Counter()
-        total_red_cards = 0
         team_logos = {}
         
         hebrew_months = {
@@ -963,100 +869,34 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             stadium = match.get('אצטדיון', '')
             if stadium and stadium != 'None': stadiums_counter[stadium] += 1
             
-            comp = match.get('תחרות', '')
-            if comp and comp != 'None': comps_counter[comp] += 1
-
-            m_id = match.get('ID_משחק')
-            if m_id:
-                details = get_fixture_details(m_id)
-                if details and details.get('results', 0) > 0:
-                    match_obj = details['response'][0]
-                    for ev in match_obj.get('events', []):
-                        ev_type = ev.get('type')
-                        ev_detail = str(ev.get('detail', ''))
-                        comments = str(ev.get('comments', ''))
-                        
-                        # בדיקה שזה לא שער עצמי וגם לא חלק מדו-קרב פנדלים (Penalty Shootout)
-                        if ev_type in ['Goal', 'Penalty'] and ev_detail != 'Own Goal' and 'Penalty Shootout' not in comments:
-                            p_name = ev.get('player', {}).get('name')
-                            if p_name:
-                                scorers_counter[p_name] += 1
-                                
-                        if ev_type == 'Card' and 'Red' in ev_detail:
-                            total_red_cards += 1
-            
         avg_goals = round(total_goals / total_matches, 2) if total_matches > 0 else 0
         top_team = teams_counter.most_common(1)[0][0] if teams_counter else "אין נתונים"
         top_team_logo = team_logos.get(top_team, "")
         top_team_display = f"<img src='{top_team_logo}' width='28' style='vertical-align: middle; margin-left: 6px;'> {top_team}" if top_team_logo else top_team
-        
         top_month = months_counter.most_common(1)[0][0] if months_counter else "אין נתונים"
-        top_scorer = scorers_counter.most_common(1)[0] if scorers_counter else None
         top_stadium = stadiums_counter.most_common(1)[0][0] if stadiums_counter else "אין נתונים"
         
-        # חישוב שעות כדורגל משוערות
         total_hours = total_matches * 2
         
         col1, col2 = st.columns(2)
-        
         with col1:
-            st.markdown(f"""
-            <div class='stat-card'>
-                <div class='stat-title'>משחקים ביומן</div>
-                <div class='stat-value'>🏟️ {total_matches}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
+            st.markdown(f"<div class='stat-card'><div class='stat-title'>משחקים ביומן</div><div class='stat-value'>🏟️ {total_matches}</div></div>", unsafe_allow_html=True)
         with col2:
-            st.markdown(f"""
-            <div class='stat-card'>
-                <div class='stat-title'>שערים שראית</div>
-                <div class='stat-value'>⚽ {total_goals}</div>
-                <div style='color: gray !important; font-size: 0.85em; font-weight: bold;'>ממוצע {avg_goals} למשחק</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"<div class='stat-card'><div class='stat-title'>שערים שראית</div><div class='stat-value'>⚽ {total_goals}</div><div style='color: gray !important; font-size: 0.85em; font-weight: bold;'>ממוצע {avg_goals} למשחק</div></div>", unsafe_allow_html=True)
             
         col3, col4 = st.columns(2)
         with col3:
-            st.markdown(f"""
-            <div class='stat-card'>
-                <div class='stat-title'>קבוצה מובילה</div>
-                <div class='stat-value' style='font-size: 1.1em; margin-top: 10px;'>{top_team_display}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"<div class='stat-card'><div class='stat-title'>קבוצה מובילה</div><div class='stat-value' style='font-size: 1.1em; margin-top: 10px;'>{top_team_display}</div></div>", unsafe_allow_html=True)
         with col4:
-            st.markdown(f"""
-            <div class='stat-card'>
-                <div class='stat-title'>משחקי יציע</div>
-                <div class='stat-value' style='font-size: 1.6em; color: #ffc107 !important;'>🎟️ {total_attended}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"<div class='stat-card'><div class='stat-title'>משחקי יציע</div><div class='stat-value' style='font-size: 1.6em; color: #ffc107 !important;'>🎟️ {total_attended}</div></div>", unsafe_allow_html=True)
 
-        col5, col6, col7 = st.columns(3)
+        col5, col6 = st.columns(2)
         with col5:
-            st.markdown(f"""
-            <div class='stat-card'>
-                <div class='stat-title'>חודש שיא בצפייה</div>
-                <div class='stat-value' style='font-size: 1.3em;'>📅 {top_month}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"<div class='stat-card'><div class='stat-title'>חודש שיא בצפייה</div><div class='stat-value' style='font-size: 1.3em;'>📅 {top_month}</div></div>", unsafe_allow_html=True)
         with col6:
-            scorer_text = f"{top_scorer[0]} ({top_scorer[1]} שערים)" if top_scorer else "אין נתונים"
-            st.markdown(f"""
-            <div class='stat-card'>
-                <div class='stat-title'>מלך השערים שלך</div>
-                <div class='stat-value' style='font-size: 1.1em;'>👑 {scorer_text}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        with col7:
-            st.markdown(f"""
-            <div class='stat-card'>
-                <div class='stat-title'>כרטיסים אדומים</div>
-                <div class='stat-value' style='font-size: 1.6em; color: #dc3545 !important;'>🟥 {total_red_cards}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"<div class='stat-card'><div class='stat-title'>אצטדיון מוביל</div><div class='stat-value' style='font-size: 1.1em;'>📍 {top_stadium}</div></div>", unsafe_allow_html=True)
 
-        # כרטיס מחשבון שעות כדורגל (עם הסימן ~)
+        # מחשבון שעות עם סימן ~
         st.markdown(f"""
         <div class='stat-card' style='margin-top: 12px; background: linear-gradient(135deg, rgba(0,123,255,0.1), rgba(0,210,255,0.05));'>
             <div class='stat-title'>⏱️ סך כל שעות הצפייה בכדורגל</div>
@@ -1079,7 +919,6 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
 🥅 סך הכל שערים שראיתי: {total_goals} ({avg_goals} למשחק!)
 🛡️ הקבוצה הנצפית ביותר: {top_team}
 📅 חודש השיא שלי: {top_month}
-🟥 כרטיסים אדומים שראיתי: {total_red_cards}
 📍 האצטדיון שלי: {top_stadium}
 
 הופק באמצעות "יומן משחקי הכדורגל שלי" 🏆"""
@@ -1088,7 +927,6 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         wa_link = f"https://api.whatsapp.com/send?text={encoded_wa_text}"
         
         col_dl1, col_dl2, col_dl3 = st.columns([1, 8, 1])
-        
         with col_dl2:
             st.download_button(
                 label="⬇️ הורד גיבוי לאקסל",
@@ -1097,7 +935,6 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
                 mime="text/csv",
                 use_container_width=True
             )
-            
             st.markdown(f"""
             <a href="{wa_link}" target="_blank" style="display: block; background-color: #25D366; color: white !important; padding: 10px 15px; border-radius: 12px; text-decoration: none; font-weight: 900; text-align: center; margin-top: 10px; font-size: 0.95em; box-shadow: 0 4px 6px rgba(37,211,102,0.3);">
                 📲 שתף בוואטסאפ
