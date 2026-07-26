@@ -280,8 +280,11 @@ def get_fixture_details(match_id):
     url = "https://v3.football.api-sports.io/fixtures"
     querystring = {"id": match_id}
     headers = {"x-apisports-key": API_KEY}
-    response = requests.get(url, headers=headers, params=querystring)
-    return response.json()
+    try:
+        response = requests.get(url, headers=headers, params=querystring)
+        return response.json()
+    except:
+        return {}
 
 def get_stat_num(val):
     if val is None or val == 'None' or val == '': return -1
@@ -731,22 +734,32 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                 
                 if res1 == "DAILY_LIMIT" or res2 == "DAILY_LIMIT":
                     st.error("🛑 הגעת למגבלה היומית של השרת!")
+                    st.session_state.t1_opts = []
+                    st.session_state.t2_opts = []
                 elif res1 == "RATE_LIMIT" or res2 == "RATE_LIMIT":
                     st.warning("⏳ חרגת ממגבלת השרת לדקה. המתן רגע ונסה שוב.")
-                elif not res1 or not res2:
-                    st.info("לא מצאנו את הקבוצות. נסה לאיית באנגלית.")
-                else:
+                    st.session_state.t1_opts = []
+                    st.session_state.t2_opts = []
+                elif isinstance(res1, list) and isinstance(res2, list):
                     st.session_state.t1_opts = res1
                     st.session_state.t2_opts = res2
                     st.session_state.search_results = []
+                else:
+                    st.error("⚠️ לא נמצאו תוצאות או שהתקבלה שגיאה מהשרת.")
+                    st.session_state.t1_opts = []
+                    st.session_state.t2_opts = []
 
-    if st.session_state.t1_opts and st.session_state.t2_opts:
+    # בדיקה שהתוצאות הן רשימות תקינות של מילונים לפני הצגת ה-selectbox
+    valid_t1 = isinstance(st.session_state.t1_opts, list) and len(st.session_state.t1_opts) > 0 and all(isinstance(x, dict) for x in st.session_state.t1_opts)
+    valid_t2 = isinstance(st.session_state.t2_opts, list) and len(st.session_state.t2_opts) > 0 and all(isinstance(x, dict) for x in st.session_state.t2_opts)
+
+    if valid_t1 and valid_t2:
         st.markdown("<hr style='margin: 20px 0; border: 0; border-top: 2px dashed rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
         c1, c2 = st.columns(2)
         with c1:
-            t1_sel = st.selectbox("בחר קבוצה 1:", options=st.session_state.t1_opts, format_func=lambda x: f"{x['name']} ({x['country']})")
+            t1_sel = st.selectbox("בחר קבוצה 1:", options=st.session_state.t1_opts, format_func=lambda x: f"{x.get('name', '')} ({x.get('country', '')})")
         with c2:
-            t2_sel = st.selectbox("בחר קבוצה 2:", options=st.session_state.t2_opts, format_func=lambda x: f"{x['name']} ({x['country']})")
+            t2_sel = st.selectbox("בחר קבוצה 2:", options=st.session_state.t2_opts, format_func=lambda x: f"{x.get('name', '')} ({x.get('country', '')})")
             
         st.write("")
         _, btn_col2, _ = st.columns([1, 2, 1])
@@ -871,7 +884,7 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             stadium = match.get('אצטדיון', '')
             if stadium and stadium != 'None': stadiums_counter[stadium] += 1
 
-            # חישוב שערים וכרטיסים אדומים
+            # שליפת פרטי האירועים עבור מלך שערים וכרטיסים אדומים
             m_id = match.get('ID_משחק')
             if m_id:
                 details = get_fixture_details(m_id)
