@@ -7,7 +7,7 @@ from datetime import datetime
 from collections import Counter
 import json
 
-API_KEY = "123"  # כאן תכניס את המפתח שלך או השאר 123 למפתח בדיקה חינמי
+API_KEY = "123"  # מפתח ברירת המחדל החינמי של TheSportsDB
 CSV_FILE = "my_games.csv"
 THEME_FILE = "theme.txt"
 UPLOAD_DIR = "uploads"
@@ -255,7 +255,7 @@ def delete_confirmation_dialog(match_id, match_desc):
         if st.button("ביטול", use_container_width=True):
             st.rerun()
 
-# --- חיפוש קבוצות מול TheSportsDB ---
+# --- חיפוש קבוצה בודדת מול TheSportsDB ---
 @st.cache_data(show_spinner=False)
 def search_teams_api(team_name):
     url = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/searchteams.php"
@@ -266,7 +266,6 @@ def search_teams_api(team_name):
         results = []
         if data and data.get('teams'):
             for team in data['teams']:
-                # נסנן רק לקבוצות כדורגל (Soccer)
                 if team.get('strSport') == 'Soccer':
                     results.append({
                         'id': team['idTeam'],
@@ -278,17 +277,26 @@ def search_teams_api(team_name):
     except Exception:
         return []
 
-# --- שליפת משחקים אחרונים של קבוצה מול TheSportsDB ---
+# --- שליפת משחקים ומציאת הראש בראש בין שתי הקבוצות ---
 @st.cache_data(show_spinner=False)
-def get_team_last_events(team_id):
+def get_head_to_head_matches(team1_name, team2_name, team1_id):
     url = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/eventslast.php"
-    querystring = {"id": team_id}
+    querystring = {"id": team1_id}
     try:
         response = requests.get(url, params=querystring)
         data = response.json()
+        h2h_matches = []
         if data and data.get('results'):
-            return data['results']
-        return []
+            for match in data['results']:
+                h_team = match.get('strHomeTeam', '').lower()
+                a_team = match.get('strAwayTeam', '').lower()
+                # בדיקה האם המשחק הוא בין שתי הקבוצות שנבחרו
+                t1_lower = team1_name.lower()
+                t2_lower = team2_name.lower()
+                
+                if (t1_lower in h_team or t1_lower in a_team) and (t2_lower in h_team or t2_lower in a_team):
+                    h2h_matches.append(match)
+        return h2h_matches
     except:
         return []
 
@@ -342,6 +350,7 @@ st.write("---")
 
 if nav_choice != "🔍 חיפוש והוספת משחקים":
     st.session_state.t1_opts = []
+    st.session_state.t2_opts = []
     st.session_state.search_results = []
 
 # ==========================================
@@ -420,44 +429,54 @@ if nav_choice == "📋 יומן המשחקים":
         st.info("היומן שלך ריק. עבור למסך החיפוש כדי להתחיל!")
 
 # ==========================================
-# מסך 2: חיפוש והוספת משחקים
+# מסך 2: חיפוש והוספת משחקים (שתי קבוצות)
 # ==========================================
 elif nav_choice == "🔍 חיפוש והוספת משחקים":
-    st.markdown("<h3 style='text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.5em;'>חיפוש קבוצה ומשחקים 🔍</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.5em;'>חיפוש משחקים בין שתי קבוצות 🔍</h3>", unsafe_allow_html=True)
     
-    team_search = st.text_input("הקלד שם קבוצה באנגלית (למשל: Arsenal, Real Madrid):")
-    if st.button("חפש קבוצה", type="primary", use_container_width=True):
-        if not team_search.strip():
-            st.warning("נא להקליד שם קבוצה.")
+    col1, col_vs, col2 = st.columns([5, 1, 5])
+    with col1:
+        team1_input = st.text_input("team1", placeholder="קבוצה ראשונה באנגלית (למשל: Arsenal)", label_visibility="collapsed")
+    with col_vs:
+        st.markdown("<div class='vs-badge'>VS</div>", unsafe_allow_html=True)
+    with col2:
+        team2_input = st.text_input("team2", placeholder="קבוצה שנייה באנגלית (למשל: Chelsea)", label_visibility="collapsed")
+
+    if st.button("🔍 חפש קבוצות במאגר", type="primary", use_container_width=True):
+        if not team1_input.strip() or not team2_input.strip():
+            st.warning("נא להזין שמות של שתי קבוצות.")
         else:
-            with st.spinner("מחפש קבוצה..."):
-                results = search_teams_api(team_search.strip())
-                if results:
-                    st.session_state.t1_opts = results
+            with st.spinner("מחפש קבוצות..."):
+                res1 = search_teams_api(team1_input.strip())
+                res2 = search_teams_api(team2_input.strip())
+                if res1 and res2:
+                    st.session_state.t1_opts = res1
+                    st.session_state.t2_opts = res2
                     st.session_state.search_results = []
                 else:
-                    st.warning("לא נמצאו קבוצות תואמות.")
+                    st.warning("לא נמצאו אחת או יותר מהקבוצות. וודא שהשמות נכונים באנגלית.")
                     st.session_state.t1_opts = []
+                    st.session_state.t2_opts = []
 
-    if st.session_state.t1_opts:
-        selected_team = st.selectbox(
-            "בחר קבוצה מהתוצאות:", 
-            options=st.session_state.t1_opts, 
-            format_func=lambda x: f"{x['name']} ({x['country']})"
-        )
-        
-        if st.button("הצג משחקים אחרונים של הקבוצה 🚀", type="primary", use_container_width=True):
-            with st.spinner("שולף משחקים..."):
-                events = get_team_last_events(selected_team['id'])
-                if events:
-                    st.session_state.search_results = events
+    if st.session_state.t1_opts and st.session_state.t2_opts:
+        c1, c2 = st.columns(2)
+        with c1:
+            t1_sel = st.selectbox("בחר קבוצה 1:", options=st.session_state.t1_opts, format_func=lambda x: f"{x['name']} ({x['country']})")
+        with c2:
+            t2_sel = st.selectbox("בחר קבוצה 2:", options=st.session_state.t2_opts, format_func=lambda x: f"{x['name']} ({x['country']})")
+            
+        if st.button("שלב 2: הצג משחקים ביניהן 🚀", type="primary", use_container_width=True):
+            with st.spinner("מחפש משחקים ראש בראש..."):
+                matches = get_head_to_head_matches(t1_sel['name'], t2_sel['name'], t1_sel['id'])
+                if matches:
+                    st.session_state.search_results = matches
                 else:
-                    st.warning("לא נמצאו משחקים אחרונים זמינים לקבוצה זו.")
+                    st.warning("לא נמצאו משחקים אחרונים ישירים בין שתי הקבוצות הללו במאגר.")
                     st.session_state.search_results = []
 
     if len(st.session_state.search_results) > 0:
         st.write("---")
-        st.markdown("<h4 style='text-align: center;'>משחקים אחרונים שנמצאו:</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center;'>משחקים שנמצאו:</h4>", unsafe_allow_html=True)
         for idx, match in enumerate(st.session_state.search_results):
             match_id = match.get('idEvent')
             date = match.get('dateEvent', '')
