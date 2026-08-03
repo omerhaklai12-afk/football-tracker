@@ -288,7 +288,7 @@ def get_fixture_details(match_id):
     increment_api_call()
     url = "https://v3.football.api-sports.io/fixtures"
     querystring = {"id": match_id}
-    headers = {"x-apisports-key": API_KEY}
+    headers = {"x-apisports-key": API_KEY, "x-rapidapi-host": "v3.football.api-sports.io"}
     try:
         response = requests.get(url, headers=headers, params=querystring)
         return response.json()
@@ -308,7 +308,7 @@ def search_teams_api(team_name):
     increment_api_call()
     url = "https://v3.football.api-sports.io/teams"
     querystring = {"search": team_name}
-    headers = {"x-apisports-key": API_KEY}
+    headers = {"x-apisports-key": API_KEY, "x-rapidapi-host": "v3.football.api-sports.io"}
     try:
         response = requests.get(url, headers=headers, params=querystring)
         data = response.json()
@@ -561,10 +561,9 @@ def render_saved_match_details(match, theme_name):
 
 # --- הצגת התראה על המסך אם מתקרבים ל-90 קריאות ---
 if st.session_state.api_call_count >= 90:
-    st.error(f"⚠️ **התראה קריטית!** הגעת ל-{st.session_state.api_call_count} קריאות API בס션 הנוכחי (הגבלה יומית: 100). המערכת עלולה להיחסם בקרוב!")
+    st.error(f"⚠️ **התראה קריטית!** הגעת ל-{st.session_state.api_call_count} קריאות API בסשן הנוכחי (הגבלה יומית: 100). המערכת עלולה להיחסם בקרוב!")
 else:
-    # פס מידע דיסקרטי למטה או בצד שמראה כמה קריאות בוצעו
-    st.sidebar.markdown(f"📊 **קריאות API בס션:** {st.session_state.api_call_count} / 100")
+    st.sidebar.markdown(f"📊 **קריאות API בסשן:** {st.session_state.api_call_count} / 100")
 
 # --- פריסת תפריט כפתור העיצוב ---
 col_empty, col_theme = st.columns([9, 1])
@@ -791,7 +790,7 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                 increment_api_call()
                 url = "https://v3.football.api-sports.io/fixtures/headtohead"
                 querystring = {"h2h": f"{t1_sel['id']}-{t2_sel['id']}"}
-                headers = {"x-apisports-key": API_KEY}
+                headers = {"x-apisports-key": API_KEY, "x-rapidapi-host": "v3.football.api-sports.io"}
                 response = requests.get(url, headers=headers, params=querystring)
                 data = response.json()
                 
@@ -807,7 +806,7 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
         st.write("---")
         for idx, match in enumerate(st.session_state.search_results[:15]):
             date = match['fixture']['date'][:10]
-            stadium = match['fixture']['venue']['name']
+            stadium = match['fixture']['venue']['name'] or "לא ידוע"
             competition = match['league']['name']
             home_team = match['teams']['home']['name']
             away_team = match['teams']['away']['name']
@@ -815,6 +814,7 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
             away_goals = match['goals']['away']
             match_id = match['fixture']['id']
             home_logo = match['teams']['home']['logo']
+            away_logo = match['teams']['home']['logo'] # fallback
             away_logo = match['teams']['away']['logo']
             league_logo = match['league']['logo']
             
