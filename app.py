@@ -6,6 +6,7 @@ import urllib.parse
 from deep_translator import GoogleTranslator
 from datetime import datetime
 from collections import Counter
+import json
 
 API_KEY = "765e650417c14ceb9d6ca6393af2a105"
 CSV_FILE = "my_games.csv"
@@ -16,6 +17,13 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 st.set_page_config(page_title="Football Tracker", layout="wide", page_icon="⚽", initial_sidebar_state="collapsed")
+
+# --- ניהול מונה קריאות ל-API והתראות ---
+if 'api_call_count' not in st.session_state:
+    st.session_state.api_call_count = 0
+
+def increment_api_call():
+    st.session_state.api_call_count += 1
 
 # --- פונקציות לשמירה וטעינה של בחירת העיצוב (מצב יום/לילה) ---
 def load_theme():
@@ -240,7 +248,7 @@ def delete_match_from_file(match_id):
     
     df = pd.DataFrame(current_data)
     if df.empty:
-        df = pd.DataFrame(columns=["ID_משחק", "תאריך", "תחרות", "מארחת", "תוצאה", "אורחת", "אצטדיון", "לוגו_מארחת", "לוגו_אורחת", "לוגו_תחרות", "הייתי_במשחק", "אירועים_גולש"])
+        df = pd.DataFrame(columns=["ID_משחק", "תאריך", "תחרות", "מארחת", "תוצאה", "אורחת", "אצטדיון", "לוגו_מארחת", "לוגו_אורחת", "לוגו_תחרות", "הייתי_במשחק", "אירועים_גולש", "פרטים_מלאים_משחק"])
     else:
         df = df.sort_values(by='תאריך', ascending=False)
     df.to_csv(CSV_FILE, index=False)
@@ -277,6 +285,7 @@ def delete_confirmation_dialog(match_id, match_desc):
 
 @st.cache_data(show_spinner=False)
 def get_fixture_details(match_id):
+    increment_api_call()
     url = "https://v3.football.api-sports.io/fixtures"
     querystring = {"id": match_id}
     headers = {"x-apisports-key": API_KEY}
@@ -296,6 +305,7 @@ def get_stat_num(val):
         return -1
 
 def search_teams_api(team_name):
+    increment_api_call()
     url = "https://v3.football.api-sports.io/teams"
     querystring = {"search": team_name}
     headers = {"x-apisports-key": API_KEY}
@@ -356,20 +366,23 @@ def match_card_html(date, competition, stadium, home_team, away_team, score, hom
 def get_colored_marker(text, bg_marker):
     return f"<div style='text-align: center;'><span style='background-color: {bg_marker}; color: white !important; border-radius: 20px; padding: 5px 15px; font-weight: bold; font-size: 0.9em; box-shadow: 0 2px 5px rgba(0,0,0,0.15);'>{text}</span></div><br>"
 
-def render_match_details(match_id, theme_name):
+# --- פונקציה להצגת פרטי המשחק השמורים מקומית בלי לגעת ב-API ---
+def render_saved_match_details(match, theme_name):
     is_lht = (theme_name == "בהיר ☀️")
     tc = "#333333" if is_lht else "white"
     
-    with st.spinner("טוען נתונים..."):
-        details_data = get_fixture_details(match_id)
-        
-    if not details_data or details_data.get('results', 0) == 0:
-        st.error("שגיאה בטעינת הנתונים: ייתכן שהגעת למגבלת הקריאות של השרת.")
+    raw_details = match.get('פרטים_מלאים_משחק', '')
+    if not raw_details:
+        st.warning("אין נתונים מפורטים שמורים למשחק זה.")
         return
 
-    full_match = details_data['response'][0]
+    try:
+        full_match = json.loads(raw_details)
+    except:
+        st.error("שגיאה בטעינת הנתונים השמורים.")
+        return
+
     events = full_match.get('events', [])
-    
     for i, ev in enumerate(events):
         ev['original_index'] = i
     
@@ -546,6 +559,13 @@ def render_match_details(match_id, theme_name):
     else:
         st.markdown("<div style='text-align: center; color: gray !important;'>אין סטטיסטיקות זמינות למשחק זה.</div>", unsafe_allow_html=True)
 
+# --- הצגת התראה על המסך אם מתקרבים ל-90 קריאות ---
+if st.session_state.api_call_count >= 90:
+    st.error(f"⚠️ **התראה קריטית!** הגעת ל-{st.session_state.api_call_count} קריאות API בס션 הנוכחי (הגבלה יומית: 100). המערכת עלולה להיחסם בקרוב!")
+else:
+    # פס מידע דיסקרטי למטה או בצד שמראה כמה קריאות בוצעו
+    st.sidebar.markdown(f"📊 **קריאות API בס션:** {st.session_state.api_call_count} / 100")
+
 # --- פריסת תפריט כפתור העיצוב ---
 col_empty, col_theme = st.columns([9, 1])
 with col_theme:
@@ -674,7 +694,8 @@ if nav_choice == "📋 יומן המשחקים":
                 st.markdown(match_card_html(date, competition, stadium, home_team, away_team, score, home_logo, away_logo, league_logo, st.session_state.theme, attended), unsafe_allow_html=True)
                 
                 with st.expander("📊 הצג אירועים וסטטיסטיקות"):
-                    render_match_details(match_id, st.session_state.theme)
+                    # טוען ישירות מהקובץ המקומי בלי קריאת API בכלל!
+                    render_saved_match_details(match, st.session_state.theme)
                     
                     if attended:
                         st.divider()
@@ -767,6 +788,7 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
             
         if fetch_matches:
             with st.spinner("שולף היסטוריית משחקים..."):
+                increment_api_call()
                 url = "https://v3.football.api-sports.io/fixtures/headtohead"
                 querystring = {"h2h": f"{t1_sel['id']}-{t2_sel['id']}"}
                 headers = {"x-apisports-key": API_KEY}
@@ -807,14 +829,16 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                     st.button("✅", key=f"saved_{match_id}_{idx}", disabled=True, use_container_width=True)
                 else:
                     if st.button("➕", key=f"add_{match_id}_{idx}", use_container_width=True):
-                        # שליפת פרטי המשחק פעם אחת בלבד בעת ההוספה ושמירתם בקובץ
-                        with st.spinner("שומר משחק ונתונים במאגר..."):
+                        # שליפת פרטי המשחק המלאים ואירועים פעם אחת בלבד בעת ההוספה ושמירתם מקומית בקובץ
+                        with st.spinner("שומר משחק ונתונים מלאים במאגר המקומי..."):
                             details = get_fixture_details(match_id)
+                            full_match_data = {}
                             events_list = []
+                            
                             if details and details.get('results', 0) > 0:
-                                events_list = details['response'][0].get('events', [])
+                                full_match_data = details['response'][0]
+                                events_list = full_match_data.get('events', [])
                         
-                        import json
                         match_data = {
                             "ID_משחק": match_id,
                             "תאריך": date,
@@ -827,7 +851,8 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                             "לוגו_אורחת": away_logo,
                             "לוגו_תחרות": league_logo,
                             "הייתי_במשחק": False,
-                            "אירועים_גולש": json.dumps(events_list, ensure_ascii=False)
+                            "אירועים_גולש": json.dumps(events_list, ensure_ascii=False),
+                            "פרטים_מלאים_משחק": json.dumps(full_match_data, ensure_ascii=False)
                         }
                         save_match_to_file(match_data)
                         st.rerun()
@@ -857,7 +882,6 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             7: "יולי", 8: "אוגוסט", 9: "ספטמבר", 10: "אוקטובר", 11: "נובמבר", 12: "דצמבר"
         }
 
-        import json
         for match in saved:
             if match.get('הייתי_במשחק', False):
                 total_attended += 1
@@ -944,7 +968,6 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         with col7:
             st.markdown(f"<div class='stat-card'><div class='stat-title'>כרטיסים אדומים</div><div class='stat-value' style='font-size: 1.6em; color: #dc3545 !important;'>🟥 {total_red_cards}</div></div>", unsafe_allow_html=True)
 
-        # מחשבון שעות עם סימן ~
         st.markdown(f"""
         <div class='stat-card' style='margin-top: 12px; background: linear-gradient(135deg, rgba(0,123,255,0.1), rgba(0,210,255,0.05));'>
             <div class='stat-title'>⏱️ סך כל שעות הצפייה בכדורגל</div>
