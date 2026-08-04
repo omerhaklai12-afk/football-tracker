@@ -6,7 +6,6 @@ import urllib.parse
 from deep_translator import GoogleTranslator
 from datetime import datetime
 from collections import Counter
-import json
 
 API_KEY = "765e650417c14ceb9d6ca6393af2a105"
 CSV_FILE = "my_games.csv"
@@ -17,13 +16,6 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 st.set_page_config(page_title="Football Tracker", layout="wide", page_icon="⚽", initial_sidebar_state="collapsed")
-
-# --- ניהול מונה קריאות ל-API והתראות ---
-if 'api_call_count' not in st.session_state:
-    st.session_state.api_call_count = 0
-
-def increment_api_call():
-    st.session_state.api_call_count += 1
 
 # --- פונקציות לשמירה וטעינה של בחירת העיצוב (מצב יום/לילה) ---
 def load_theme():
@@ -248,7 +240,7 @@ def delete_match_from_file(match_id):
     
     df = pd.DataFrame(current_data)
     if df.empty:
-        df = pd.DataFrame(columns=["ID_משחק", "תאריך", "תחרות", "מארחת", "תוצאה", "אורחת", "אצטדיון", "לוגו_מארחת", "לוגו_אורחת", "לוגו_תחרות", "הייתי_במשחק", "אירועים_גולש", "פרטים_מלאים_משחק"])
+        df = pd.DataFrame(columns=["ID_משחק", "תאריך", "תחרות", "מארחת", "תוצאה", "אורחת", "אצטדיון", "לוגו_מארחת", "לוגו_אורחת", "לוגו_תחרות", "הייתי_במשחק", "אירועים_גולש"])
     else:
         df = df.sort_values(by='תאריך', ascending=False)
     df.to_csv(CSV_FILE, index=False)
@@ -285,10 +277,9 @@ def delete_confirmation_dialog(match_id, match_desc):
 
 @st.cache_data(show_spinner=False)
 def get_fixture_details(match_id):
-    st.session_state.api_call_count += 1
     url = "https://v3.football.api-sports.io/fixtures"
     querystring = {"id": match_id}
-    headers = {"x-apisports-key": API_KEY, "x-rapidapi-host": "v3.football.api-sports.io"}
+    headers = {"x-apisports-key": API_KEY}
     try:
         response = requests.get(url, headers=headers, params=querystring)
         return response.json()
@@ -305,10 +296,9 @@ def get_stat_num(val):
         return -1
 
 def search_teams_api(team_name):
-    st.session_state.api_call_count += 1
     url = "https://v3.football.api-sports.io/teams"
     querystring = {"search": team_name}
-    headers = {"x-apisports-key": API_KEY, "x-rapidapi-host": "v3.football.api-sports.io"}
+    headers = {"x-apisports-key": API_KEY}
     try:
         response = requests.get(url, headers=headers, params=querystring)
         data = response.json()
@@ -327,7 +317,9 @@ def search_teams_api(team_name):
                 team = item['team']
                 name = team['name']
                 
-                # אם מדובר בנבחרות לאומיות (למשל Cameroon, France וכו'), נעדיף לקחת ישירות את הנבחרת הראשית
+                if any(u in name for u in [" U1", " U2", " U-1", " U-2", "Olympic", "Youth"]):
+                    continue
+                    
                 results.append({
                     'id': team['id'],
                     'name': name,
@@ -364,23 +356,20 @@ def match_card_html(date, competition, stadium, home_team, away_team, score, hom
 def get_colored_marker(text, bg_marker):
     return f"<div style='text-align: center;'><span style='background-color: {bg_marker}; color: white !important; border-radius: 20px; padding: 5px 15px; font-weight: bold; font-size: 0.9em; box-shadow: 0 2px 5px rgba(0,0,0,0.15);'>{text}</span></div><br>"
 
-# --- פונקציה להצגת פרטי המשחק השמורים מקומית בלי לגעת ב-API ---
-def render_saved_match_details(match, theme_name):
+def render_match_details(match_id, theme_name):
     is_lht = (theme_name == "בהיר ☀️")
     tc = "#333333" if is_lht else "white"
     
-    raw_details = match.get('פרטים_מלאים_משחק', '')
-    if not raw_details:
-        st.warning("אין נתונים מפורטים שמורים למשחק זה.")
+    with st.spinner("טוען נתונים..."):
+        details_data = get_fixture_details(match_id)
+        
+    if not details_data or details_data.get('results', 0) == 0:
+        st.error("שגיאה בטעינת הנתונים: ייתכן שהגעת למגבלת הקריאות של השרת.")
         return
 
-    try:
-        full_match = json.loads(raw_details)
-    except:
-        st.error("שגיאה בטעינת הנתונים השמורים.")
-        return
-
+    full_match = details_data['response'][0]
     events = full_match.get('events', [])
+    
     for i, ev in enumerate(events):
         ev['original_index'] = i
     
@@ -557,12 +546,6 @@ def render_saved_match_details(match, theme_name):
     else:
         st.markdown("<div style='text-align: center; color: gray !important;'>אין סטטיסטיקות זמינות למשחק זה.</div>", unsafe_allow_html=True)
 
-# --- הצגת התראה על המסך אם מתקרבים ל-90 קריאות ---
-if st.session_state.api_call_count >= 90:
-    st.error(f"⚠️ **התראה קריטית!** הגעת ל-{st.session_state.api_call_count} קריאות API בסשן הנוכחי (הגבלה יומית: 100). המערכת עלולה להיחסם בקרוב!")
-else:
-    st.sidebar.markdown(f"📊 **קריאות API בסשן:** {st.session_state.api_call_count} / 100")
-
 # --- פריסת תפריט כפתור העיצוב ---
 col_empty, col_theme = st.columns([9, 1])
 with col_theme:
@@ -691,7 +674,7 @@ if nav_choice == "📋 יומן המשחקים":
                 st.markdown(match_card_html(date, competition, stadium, home_team, away_team, score, home_logo, away_logo, league_logo, st.session_state.theme, attended), unsafe_allow_html=True)
                 
                 with st.expander("📊 הצג אירועים וסטטיסטיקות"):
-                    render_saved_match_details(match, st.session_state.theme)
+                    render_match_details(match_id, st.session_state.theme)
                     
                     if attended:
                         st.divider()
@@ -716,7 +699,7 @@ if nav_choice == "📋 יומן המשחקים":
         st.info("הרשימה שלך ריקה. עבור למסך החיפוש כדי להתחיל!")
 
 # ==========================================
-# מסך 2: חיפוש משחקים חדשים עם זיהוי נבחרות אוטומטי
+# מסך 2: חיפוש משחקים חדשים
 # ==========================================
 elif nav_choice == "🔍 חיפוש והוספת משחקים":
     st.markdown("<h3 style='text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.5em;'>חיפוש משחקים חדשים 🔍</h3>", unsafe_allow_html=True)
@@ -724,61 +707,85 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
     with st.container():
         col1, col_vs, col2 = st.columns([5, 1, 5])
         with col1:
-            team1_name = st.text_input("team1", placeholder="קבוצה/נבחרת 1 (למשל: קמרון)", label_visibility="collapsed")
+            team1_name = st.text_input("team1", placeholder="קבוצה ראשונה", label_visibility="collapsed")
         with col_vs:
             st.markdown("<div class='vs-badge'>VS</div>", unsafe_allow_html=True)
         with col2:
-            team2_name = st.text_input("team2", placeholder="קבוצה/נבחרת 2 (למשל: ברזיל)", label_visibility="collapsed")
+            team2_name = st.text_input("team2", placeholder="קבוצה שנייה", label_visibility="collapsed")
 
         st.write("")
         _, btn_col, _ = st.columns([1, 2, 1])
         with btn_col:
-            search_teams_clicked = st.button("🔍 חפש משחקים ביניהן 🚀", use_container_width=True, type="primary")
+            search_teams_clicked = st.button("🔍 חפש קבוצות במאגר", use_container_width=True, type="primary")
 
     if search_teams_clicked:
         if team1_name.strip() == "" or team2_name.strip() == "":
-            st.warning("אנא הכנס שמות של שתי קבוצות או נבחרות.")
+            st.warning("אנא הכנס שמות של שתי קבוצות.")
         else:
-            with st.spinner('מחפש נבחרות ומשחקים בשרת...'):
+            with st.spinner('מחפש קבוצות בשרת...'):
                 try:
-                    t1_en = GoogleTranslator(source='auto', target='en').translate(team1_name.strip())
-                    t2_en = GoogleTranslator(source='auto', target='en').translate(team2_name.strip())
+                    t1_en = GoogleTranslator(source='auto', target='en').translate(team1_name)
+                    t2_en = GoogleTranslator(source='auto', target='en').translate(team2_name)
                 except:
-                    t1_en, t2_en = team1_name.strip(), team2_name.strip()
+                    t1_en, t2_en = team1_name, team2_name
 
                 res1 = search_teams_api(t1_en)
                 res2 = search_teams_api(t2_en)
                 
-                if isinstance(res1, list) and isinstance(res2, list) and len(res1) > 0 and len(res2) > 0:
-                    # בודקים אם מדובר בחיפוש מדינה/נבחרת יחידה או ברורה (לוקחים את התוצאה הראשונה הרשמית)
-                    t1_sel = res1[0]
-                    t2_sel = res2[0]
-                    
-                    # שולפים ישר את המשחקים הישירים בלי שלב בחירה מיותר באמצע!
-                    st.session_state.api_call_count += 1
-                    url = "https://v3.football.api-sports.io/fixtures/headtohead"
-                    querystring = {"h2h": f"{t1_sel['id']}-{t2_sel['id']}"}
-                    headers = {"x-apisports-key": API_KEY, "x-rapidapi-host": "v3.football.api-sports.io"}
-                    response = requests.get(url, headers=headers, params=querystring)
-                    data = response.json()
-                    
-                    if data.get('results', 0) > 0:
-                        matches = data['response']
-                        finished = [m for m in matches if m['fixture']['status']['short'] in ['FT', 'AET', 'PEN']]
-                        st.session_state.search_results = sorted(finished, key=lambda x: x['fixture']['date'], reverse=True)
-                    else:
-                        st.session_state.search_results = []
-                        st.warning(f"לא נמצאו משחקים ישירים במאגר בין {t1_sel['name']} ל-{t2_sel['name']}.")
-                else:
-                    st.warning("לא נמצאו הקבוצות או הנבחרות שהוקלדו. נסה לכתוב באנגלית או לשנות איות.")
+                if res1 == "DAILY_LIMIT" or res2 == "DAILY_LIMIT":
+                    st.error("🛑 הגעת למגבלה היומית של השרת!")
+                    st.session_state.t1_opts = []
+                    st.session_state.t2_opts = []
+                elif res1 == "RATE_LIMIT" or res2 == "RATE_LIMIT":
+                    st.warning("⏳ חרגת ממגבלת השרת לדקה. המתן רגע ונסה שוב.")
+                    st.session_state.t1_opts = []
+                    st.session_state.t2_opts = []
+                elif isinstance(res1, list) and isinstance(res2, list):
+                    st.session_state.t1_opts = res1
+                    st.session_state.t2_opts = res2
                     st.session_state.search_results = []
+                else:
+                    st.error("⚠️ לא נמצאו תוצאות או שהתקבלה שגיאה מהשרת.")
+                    st.session_state.t1_opts = []
+                    st.session_state.t2_opts = []
+
+    valid_t1 = isinstance(st.session_state.t1_opts, list) and len(st.session_state.t1_opts) > 0 and all(isinstance(x, dict) for x in st.session_state.t1_opts)
+    valid_t2 = isinstance(st.session_state.t2_opts, list) and len(st.session_state.t2_opts) > 0 and all(isinstance(x, dict) for x in st.session_state.t2_opts)
+
+    if valid_t1 and valid_t2:
+        st.markdown("<hr style='margin: 20px 0; border: 0; border-top: 2px dashed rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
+        c1, c2 = st.columns(2)
+        with c1:
+            t1_sel = st.selectbox("בחר קבוצה 1:", options=st.session_state.t1_opts, format_func=lambda x: f"{x.get('name', '')} ({x.get('country', '')})")
+        with c2:
+            t2_sel = st.selectbox("בחר קבוצה 2:", options=st.session_state.t2_opts, format_func=lambda x: f"{x.get('name', '')} ({x.get('country', '')})")
+            
+        st.write("")
+        _, btn_col2, _ = st.columns([1, 2, 1])
+        with btn_col2:
+            fetch_matches = st.button("שלב 2: הצג משחקים ביניהן 🚀", use_container_width=True, type="primary")
+            
+        if fetch_matches:
+            with st.spinner("שולף היסטוריית משחקים..."):
+                url = "https://v3.football.api-sports.io/fixtures/headtohead"
+                querystring = {"h2h": f"{t1_sel['id']}-{t2_sel['id']}"}
+                headers = {"x-apisports-key": API_KEY}
+                response = requests.get(url, headers=headers, params=querystring)
+                data = response.json()
+                
+                if data.get('results', 0) > 0:
+                    matches = data['response']
+                    finished = [m for m in matches if m['fixture']['status']['short'] in ['FT', 'AET', 'PEN']]
+                    st.session_state.search_results = sorted(finished, key=lambda x: x['fixture']['date'], reverse=True)
+                else:
+                    st.session_state.search_results = []
+                    st.warning("לא נמצאו משחקים בין הקבוצות.")
 
     if len(st.session_state.search_results) > 0:
         st.write("---")
-        st.markdown(f"<p style='text-align: center; font-weight: bold; color: gray;'>נמצאו {len(st.session_state.search_results)} משחקים אחרונים:</p>", unsafe_allow_html=True)
         for idx, match in enumerate(st.session_state.search_results[:15]):
             date = match['fixture']['date'][:10]
-            stadium = match['fixture']['venue']['name'] or "לא ידוע"
+            stadium = match['fixture']['venue']['name']
             competition = match['league']['name']
             home_team = match['teams']['home']['name']
             away_team = match['teams']['away']['name']
@@ -800,15 +807,14 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                     st.button("✅", key=f"saved_{match_id}_{idx}", disabled=True, use_container_width=True)
                 else:
                     if st.button("➕", key=f"add_{match_id}_{idx}", use_container_width=True):
-                        with st.spinner("שומר משחק ונתונים מלאים במאגר המקומי..."):
+                        # שליפת פרטי המשחק פעם אחת בלבד בעת ההוספה ושמירתם בקובץ
+                        with st.spinner("שומר משחק ונתונים במאגר..."):
                             details = get_fixture_details(match_id)
-                            full_match_data = {}
                             events_list = []
-                            
                             if details and details.get('results', 0) > 0:
-                                full_match_data = details['response'][0]
-                                events_list = full_match_data.get('events', [])
+                                events_list = details['response'][0].get('events', [])
                         
+                        import json
                         match_data = {
                             "ID_משחק": match_id,
                             "תאריך": date,
@@ -821,8 +827,7 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                             "לוגו_אורחת": away_logo,
                             "לוגו_תחרות": league_logo,
                             "הייתי_במשחק": False,
-                            "אירועים_גולש": json.dumps(events_list, ensure_ascii=False),
-                            "פרטים_מלאים_משחק": json.dumps(full_match_data, ensure_ascii=False)
+                            "אירועים_גולש": json.dumps(events_list, ensure_ascii=False)
                         }
                         save_match_to_file(match_data)
                         st.rerun()
@@ -852,6 +857,7 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
             7: "יולי", 8: "אוגוסט", 9: "ספטמבר", 10: "אוקטובר", 11: "נובמבר", 12: "דצמבר"
         }
 
+        import json
         for match in saved:
             if match.get('הייתי_במשחק', False):
                 total_attended += 1
@@ -882,11 +888,12 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
                 if h_logo: team_logos[h_team] = h_logo
             if a_team: 
                 teams_counter[a_team] += 1
-                if a_logo: team_logos[a_logo] = a_logo
+                if a_logo: team_logos[a_team] = a_logo
             
             stadium = match.get('אצטדיון', '')
             if stadium and stadium != 'None': stadiums_counter[stadium] += 1
 
+            # שליפת הנתונים ישירות מקובץ השמירה המקומי (ללא קריאות נוספות ל-API!)
             events_json = match.get('אירועים_גולש', '')
             if events_json:
                 try:
@@ -937,6 +944,7 @@ elif nav_choice == "📊 סטטיסטיקות אישיות":
         with col7:
             st.markdown(f"<div class='stat-card'><div class='stat-title'>כרטיסים אדומים</div><div class='stat-value' style='font-size: 1.6em; color: #dc3545 !important;'>🟥 {total_red_cards}</div></div>", unsafe_allow_html=True)
 
+        # מחשבון שעות עם סימן ~
         st.markdown(f"""
         <div class='stat-card' style='margin-top: 12px; background: linear-gradient(135deg, rgba(0,123,255,0.1), rgba(0,210,255,0.05));'>
             <div class='stat-title'>⏱️ סך כל שעות הצפייה בכדורגל</div>
