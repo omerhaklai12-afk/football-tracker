@@ -8,7 +8,7 @@ from datetime import datetime
 from collections import Counter
 import json
 
-API_KEY = "765e650417c14ceb9d6ca6393af2a105"
+API_KEY = "8e5965d6463aad07467a72482d6b665a"
 CSV_FILE = "my_games.csv"
 THEME_FILE = "theme.txt"
 UPLOAD_DIR = "uploads"
