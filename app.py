@@ -8,9 +8,9 @@ from datetime import datetime
 from collections import Counter
 import json
 
-# --- הגדרות ה-API החדש (TheStatsAPI) והמפתח שלך ---
+# --- הגדרות ה-API המעודכנות ל-TheStatsAPI ---
 API_KEY = "fapi_WDeKpURK3YzNbWBySpgzu9MEtFvkP36M"
-BASE_URL = "https://www.thestatsapi.com/api/football"
+BASE_URL = "https://api.thestatsapi.com/api/football"
 HEADERS = {
     "Authorization": f"Bearer {API_KEY}",
     "Accept": "application/json"
@@ -308,7 +308,6 @@ def search_teams_api(team_name):
 def match_card_html(date, competition, stadium, home_team, away_team, score, theme_name, attended=False):
     is_lht = (theme_name == "בהיר ☀️")
     tc_inline = "#333333 !important" if is_lht else "white !important"
-    
     att_tag = "<br><span style='background: linear-gradient(45deg, #28a745, #20c997); color: white !important; padding: 2px 8px; border-radius: 15px; font-size: 0.75em; font-weight: 900; display: inline-block; margin-top: 4px;'>🎟️ באצטדיון</span>" if attended else ""
     
     return f"""
