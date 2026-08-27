@@ -3,11 +3,12 @@ import requests
 import pandas as pd
 import os
 import urllib.parse
+from deep_translator import GoogleTranslator
 from datetime import datetime
 from collections import Counter
 import json
 
-# --- הגדרות ה-API המעודכנות ל-TheStatsAPI ---
+# --- הגדרות ה-API הרשמיות ל-TheStatsAPI והמפתח שלך ---
 API_KEY = "fapi_WDeKpURK3YzNbWBySpgzu9MEtFvkP36M"
 BASE_URL = "https://api.thestatsapi.com/api/football"
 HEADERS = {
@@ -50,6 +51,8 @@ def change_theme():
 if 'theme' not in st.session_state: st.session_state.theme = load_theme()
 if 'saved_matches' not in st.session_state: st.session_state.saved_matches = []
 if 'search_results' not in st.session_state: st.session_state.search_results = []
+if 't1_opts' not in st.session_state: st.session_state.t1_opts = []
+if 't2_opts' not in st.session_state: st.session_state.t2_opts = []
 
 # --- בניית ה-CSS הדינמי המותאם למובייל ---
 is_light = (st.session_state.theme == "בהיר ☀️")
@@ -177,6 +180,14 @@ div.row-widget.stRadio > div > label:hover {{
     background-color: {radio_hover} !important;
 }}
 
+.vs-badge {{
+    text-align: center;
+    margin-top: 5px;
+    font-size: 1.5em;
+    font-weight: 900;
+    color: {'#adb5bd' if is_light else '#6c757d'};
+}}
+
 .stat-card, .match-card {{
     background: {card_bg};
     border-radius: 16px;
@@ -280,15 +291,16 @@ def delete_confirmation_dialog(match_id, match_desc):
             st.rerun()
 
 @st.cache_data(show_spinner=False)
-def fetch_matches_by_competition(comp_id):
+def search_teams_api(team_name):
     increment_api_call()
-    url = f"{BASE_URL}/matches"
+    url = f"{BASE_URL}/teams"
     try:
-        response = requests.get(url, headers=HEADERS, params={"competition_id": comp_id})
+        response = requests.get(url, headers=HEADERS, params={"search": team_name})
         data = response.json()
-        if isinstance(data, list): return data
-        if isinstance(data, dict):
-            return data.get('data', data.get('matches', []))
+        if isinstance(data, list):
+            return data
+        elif isinstance(data, dict):
+            return data.get('data', data.get('teams', []))
         return []
     except:
         return []
@@ -341,10 +353,12 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-nav_choice = st.radio("ניווט", ["📋 יומן המשחקים", "🔍 טעינת משחקי ליגה", "➕ הוספה ידנית", "📊 סטטיסטיקות אישיות"], index=0, horizontal=True, label_visibility="collapsed")
+nav_choice = st.radio("ניווט", ["📋 יומן המשחקים", "🔍 חיפוש והוספת משחקים", "➕ הוספה ידנית", "📊 סטטיסטיקות אישיות"], index=0, horizontal=True, label_visibility="collapsed")
 st.write("---")
 
-if nav_choice != "🔍 טעינת משחקי ליגה":
+if nav_choice != "🔍 חיפוש והוספת משחקים":
+    st.session_state.t1_opts = []
+    st.session_state.t2_opts = []
     st.session_state.search_results = []
 
 # ==========================================
@@ -459,33 +473,91 @@ if nav_choice == "📋 יומן המשחקים":
         st.info("הרשימה שלך ריקה. עבור למסך החיפוש כדי להתחיל!")
 
 # ==========================================
-# מסך 2: טעינת משחקי ליגה לפי מזהה (למשל comp_3039)
+# מסך 2: חיפוש משחקים חדשים
 # ==========================================
-elif nav_choice == "🔍 טעינת משחקי ליגה":
-    st.markdown("<h3 style='text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.5em;'>טעינת משחקי ליגה מהמאגר 🔍</h3>", unsafe_allow_html=True)
+elif nav_choice == "🔍 חיפוש והוספת משחקים":
+    st.markdown("<h3 style='text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.5em;'>חיפוש משחקים חדשים 🔍</h3>", unsafe_allow_html=True)
     
-    comp_input = st.text_input("הכנס קוד ליגה (למשל comp_3039 לפרמייר ליג):", value="comp_3039")
-    
-    if st.button("טען משחקי ליגה 🚀", type="primary", use_container_width=True):
-        if comp_input.strip():
-            with st.spinner("שולף משחקים מהשרת..."):
-                matches = fetch_matches_by_competition(comp_input.strip())
-                if matches:
-                    st.session_state.search_results = matches
-                    st.success(f"נמצאו {len(matches)} משחקים בהצלחה!")
-                else:
-                    st.session_state.search_results = []
-                    st.warning("לא נמצאו משחקים לקוד ליגה זה.")
+    with st.container():
+        col1, col_vs, col2 = st.columns([5, 1, 5])
+        with col1:
+            team1_name = st.text_input("team1", placeholder="קבוצה ראשונה (למשל: Real Madrid)", label_visibility="collapsed")
+        with col_vs:
+            st.markdown("<div class='vs-badge'>VS</div>", unsafe_allow_html=True)
+        with col2:
+            team2_name = st.text_input("team2", placeholder="קבוצה שנייה (למשל: Barcelona)", label_visibility="collapsed")
+
+        st.write("")
+        _, btn_col, _ = st.columns([1, 2, 1])
+        with btn_col:
+            search_teams_clicked = st.button("🔍 חפש קבוצות במאגר", use_container_width=True, type="primary")
+
+    if search_teams_clicked:
+        if team1_name.strip() == "" or team2_name.strip() == "":
+            st.warning("אנא הכנס שמות של שתי קבוצות.")
         else:
-            st.warning("נا להזין קוד ליגה תקין.")
+            with st.spinner('מחפש קבוצות בשרת...'):
+                try:
+                    t1_en = GoogleTranslator(source='auto', target='en').translate(team1_name)
+                    t2_en = GoogleTranslator(source='auto', target='en').translate(team2_name)
+                except:
+                    t1_en, t2_en = team1_name, team2_name
+
+                res1 = search_teams_api(t1_en)
+                res2 = search_teams_api(t2_en)
+                
+                if res1 or res2:
+                    st.session_state.t1_opts = res1 if res1 else [{'id': t1_en, 'name': team1_name}]
+                    st.session_state.t2_opts = res2 if res2 else [{'id': t2_en, 'name': team2_name}]
+                    st.session_state.search_results = []
+                else:
+                    st.warning("⚠️ לא נמצאו תוצאות מדויקות, משתמש בשמות שהוזנו.")
+                    st.session_state.t1_opts = [{'id': t1_en, 'name': team1_name}]
+                    st.session_state.t2_opts = [{'id': t2_en, 'name': team2_name}]
+
+    valid_t1 = isinstance(st.session_state.t1_opts, list) and len(st.session_state.t1_opts) > 0
+    valid_t2 = isinstance(st.session_state.t2_opts, list) and len(st.session_state.t2_opts) > 0
+
+    if valid_t1 and valid_t2:
+        st.markdown("<hr style='margin: 20px 0; border: 0; border-top: 2px dashed rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
+        c1, c2 = st.columns(2)
+        with c1:
+            t1_sel = st.selectbox("בחר קבוצה 1:", options=st.session_state.t1_opts, format_func=lambda x: x.get('name', str(x)))
+        with c2:
+            t2_sel = st.selectbox("בחר קבוצה 2:", options=st.session_state.t2_opts, format_func=lambda x: x.get('name', str(x)))
+            
+        st.write("")
+        _, btn_col2, _ = st.columns([1, 2, 1])
+        with btn_col2:
+            fetch_matches = st.button("שלב 2: הצג משחקים ביניהן 🚀", use_container_width=True, type="primary")
+            
+        if fetch_matches:
+            with st.spinner("שולף היסטוריית משחקים..."):
+                increment_api_call()
+                try:
+                    t1_id = t1_sel.get('id') if isinstance(t1_sel, dict) else t1_sel
+                    t2_id = t2_sel.get('id') if isinstance(t2_sel, dict) else t2_sel
+                    resp = requests.get(f"{BASE_URL}/matches", headers=HEADERS, params={"team_id": t1_id})
+                    data = resp.json()
+                    matches = data.get('data', data.get('matches', data)) if isinstance(data, dict) else data
+                    h2h = []
+                    if isinstance(matches, list):
+                        for m in matches:
+                            teams_str = str(m).lower()
+                            if str(t2_id).lower() in teams_str or str(t2_sel.get('name', '')).lower() in teams_str:
+                                h2h.append(m)
+                    st.session_state.search_results = h2h if h2h else (matches[:15] if isinstance(matches, list) else [])
+                except:
+                    st.session_state.search_results = []
+                    st.warning("לא נמצאו משחקים בין הקבוצות.")
 
     if len(st.session_state.search_results) > 0:
         st.write("---")
-        for idx, match in enumerate(st.session_state.search_results[:25]):
+        for idx, match in enumerate(st.session_state.search_results[:15]):
             m_id = match.get('id', f"match_{idx}")
             date = str(match.get('date', ''))[:10]
             stadium = match.get('venue', 'לא ידוע')
-            competition = match.get('competition', {}).get('name', 'Premier League') if isinstance(match.get('competition'), dict) else 'ליגה'
+            competition = match.get('competition', {}).get('name', 'ליגה') if isinstance(match.get('competition'), dict) else 'ליגה'
             home_team = match.get('homeTeam', {}).get('name', 'בית') if isinstance(match.get('homeTeam'), dict) else 'בית'
             away_team = match.get('awayTeam', {}).get('name', 'חוץ') if isinstance(match.get('awayTeam'), dict) else 'חוץ'
             home_goals = match.get('homeScore', 0)
