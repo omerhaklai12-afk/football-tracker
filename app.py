@@ -8,12 +8,12 @@ from datetime import datetime
 from collections import Counter
 import json
 
-# --- התאמה מדוייקת ל-TheStatsAPI תוך שמירה על כל הקוד והעיצוב המקורי ---
+# --- הגדרות ה-API החדש (TheStatsAPI) והמפתח שלך ---
 API_KEY = "fapi_WDeKpURK3YzNbWBySpgzu9MEtFvkP36M"
-BASE_URL = "https://api.thestatsapi.com/api/football"
+BASE_URL = "https://www.thestatsapi.com/api/v1"
 HEADERS = {
     "Authorization": f"Bearer {API_KEY}",
-    "Accept": "application/json"
+    "Content-Type": "application/json"
 }
 
 CSV_FILE = "my_games.csv"
@@ -24,6 +24,13 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 st.set_page_config(page_title="Football Tracker", layout="wide", page_icon="⚽", initial_sidebar_state="collapsed")
+
+# --- ניהול מונה קריאות ל-API והתראות ---
+if 'api_call_count' not in st.session_state:
+    st.session_state.api_call_count = 0
+
+def increment_api_call():
+    st.session_state.api_call_count += 1
 
 # --- פונקציות לשמירה וטעינה של בחירת העיצוב (מצב יום/לילה) ---
 def load_theme():
@@ -284,25 +291,8 @@ def delete_confirmation_dialog(match_id, match_desc):
             st.rerun()
 
 @st.cache_data(show_spinner=False)
-def get_fixture_details(match_id):
-    url = f"{BASE_URL}/matches/{match_id}"
-    try:
-        response = requests.get(url, headers=HEADERS)
-        data = response.json()
-        return {"results": 1, "response": [data]} if isinstance(data, dict) else {}
-    except:
-        return {}
-
-def get_stat_num(val):
-    if val is None or val == 'None' or val == '': return -1
-    if isinstance(val, str) and '%' in val:
-        return int(val.replace('%', ''))
-    try:
-        return int(val)
-    except:
-        return -1
-
 def search_teams_api(team_name):
+    increment_api_call()
     url = f"{BASE_URL}/teams"
     try:
         response = requests.get(url, headers=HEADERS, params={"search": team_name})
@@ -355,19 +345,23 @@ def match_card_html(date, competition, stadium, home_team, away_team, score, hom
 def get_colored_marker(text, bg_marker):
     return f"<div style='text-align: center;'><span style='background-color: {bg_marker}; color: white !important; border-radius: 20px; padding: 5px 15px; font-weight: bold; font-size: 0.9em; box-shadow: 0 2px 5px rgba(0,0,0,0.15);'>{text}</span></div><br>"
 
-def render_match_details(match_id, theme_name):
+def render_match_details(match, theme_name):
     is_lht = (theme_name == "בהיר ☀️")
     tc = "#333333" if is_lht else "white"
-    
-    with st.spinner("טוען נתונים..."):
-        details_data = get_fixture_details(match_id)
-        
-    if not details_data or details_data.get('results', 0) == 0:
-        st.info("פרטים מפורטים אינם זמינים עבור משחק זה במאגר החדש.")
-        return
+    st.markdown(f"<div style='text-align: center; color: gray !important; font-size: 1em; font-weight: bold;'>מסגרת: {match.get('תחרות')} | אצטדיון: {match.get('אצטדיון')}</div><br>", unsafe_allow_html=True)
+    h1, h2, h3 = st.columns([1, 1, 1])
+    with h1:
+        st.markdown(f"<div style='text-align: center;'><b style='font-size: 1.1em; color: {tc} !important;'>{match.get('מארחת')}</b></div>", unsafe_allow_html=True)
+    with h2:
+        st.markdown(f"<div style='text-align: center;'><h1 style='font-size: 2.8em; margin: 0; color: #007bff !important;'>{match.get('תוצאה')}</h1></div>", unsafe_allow_html=True)
+    with h3:
+        st.markdown(f"<div style='text-align: center;'><b style='font-size: 1.1em; color: {tc} !important;'>{match.get('אורחת')}</b></div>", unsafe_allow_html=True)
 
-    full_match = details_data['response'][0]
-    st.markdown(f"<div style='text-align: center; color: gray !important; font-size: 1em; font-weight: bold;'>מסגרת: {full_match.get('competition', {}).get('name', 'ליגה')} | אצטדיון: {full_match.get('venue', 'אצטדיון')}</div><br>", unsafe_allow_html=True)
+# --- התראה קריטית על קריאות API ---
+if st.session_state.api_call_count >= 90:
+    st.error(f"⚠️ **התראה קריטית!** הגעת ל-{st.session_state.api_call_count} קריאות API בסשן הנוכחי.")
+else:
+    st.sidebar.markdown(f"📊 **קריאות API בסשן:** {st.session_state.api_call_count}")
 
 # --- פריסת תפריט כפתור העיצוב ---
 col_empty, col_theme = st.columns([9, 1])
@@ -497,7 +491,7 @@ if nav_choice == "📋 יומן המשחקים":
                 st.markdown(match_card_html(date, competition, stadium, home_team, away_team, score, home_logo, away_logo, league_logo, st.session_state.theme, attended), unsafe_allow_html=True)
                 
                 with st.expander("📊 הצג אירועים וסטטיסטיקות"):
-                    render_match_details(match_id, st.session_state.theme)
+                    render_match_details(match, st.session_state.theme)
                     
                     if attended:
                         st.divider()
@@ -582,6 +576,7 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
             
         if fetch_matches:
             with st.spinner("שולף היסטוריית משחקים..."):
+                increment_api_call()
                 try:
                     t1_id = t1_sel.get('id')
                     resp = requests.get(f"{BASE_URL}/matches", headers=HEADERS, params={"team_id": t1_id})
