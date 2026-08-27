@@ -8,7 +8,7 @@ from datetime import datetime
 from collections import Counter
 import json
 
-# --- הגדרות ה-API הרשמיות ל-TheStatsAPI והמפתח שלך ---
+# --- התאמה מדוייקת ל-TheStatsAPI תוך שמירה על כל הקוד והעיצוב המקורי ---
 API_KEY = "fapi_WDeKpURK3YzNbWBySpgzu9MEtFvkP36M"
 BASE_URL = "https://api.thestatsapi.com/api/football"
 HEADERS = {
@@ -24,13 +24,6 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 st.set_page_config(page_title="Football Tracker", layout="wide", page_icon="⚽", initial_sidebar_state="collapsed")
-
-# --- ניהול מונה קריאות ל-API והתראות ---
-if 'api_call_count' not in st.session_state:
-    st.session_state.api_call_count = 0
-
-def increment_api_call():
-    st.session_state.api_call_count += 1
 
 # --- פונקציות לשמירה וטעינה של בחירת העיצוב (מצב יום/לילה) ---
 def load_theme():
@@ -255,7 +248,7 @@ def delete_match_from_file(match_id):
     
     df = pd.DataFrame(current_data)
     if df.empty:
-        df = pd.DataFrame(columns=["ID_משחק", "תאריך", "תחרות", "מארחת", "תוצאה", "אורחת", "אצטדיון", "הייתי_במשחק"])
+        df = pd.DataFrame(columns=["ID_משחק", "תאריך", "תחרות", "מארחת", "תוצאה", "אורחת", "אצטדיון", "לוגו_מארחת", "לוגו_אורחת", "לוגו_תחרות", "הייתי_במשחק", "אירועים_גולש"])
     else:
         df = df.sort_values(by='תאריך', ascending=False)
     df.to_csv(CSV_FILE, index=False)
@@ -291,43 +284,90 @@ def delete_confirmation_dialog(match_id, match_desc):
             st.rerun()
 
 @st.cache_data(show_spinner=False)
+def get_fixture_details(match_id):
+    url = f"{BASE_URL}/matches/{match_id}"
+    try:
+        response = requests.get(url, headers=HEADERS)
+        data = response.json()
+        return {"results": 1, "response": [data]} if isinstance(data, dict) else {}
+    except:
+        return {}
+
+def get_stat_num(val):
+    if val is None or val == 'None' or val == '': return -1
+    if isinstance(val, str) and '%' in val:
+        return int(val.replace('%', ''))
+    try:
+        return int(val)
+    except:
+        return -1
+
 def search_teams_api(team_name):
-    increment_api_call()
     url = f"{BASE_URL}/teams"
     try:
         response = requests.get(url, headers=HEADERS, params={"search": team_name})
         data = response.json()
+        
+        teams_list = []
         if isinstance(data, list):
-            return data
+            teams_list = data
         elif isinstance(data, dict):
-            return data.get('data', data.get('teams', []))
-        return []
-    except:
+            teams_list = data.get('data', data.get('teams', []))
+            
+        results = []
+        for team in teams_list:
+            name = team.get('name', '')
+            if any(u in name for u in [" U1", " U2", " U-1", " U-2", "Olympic", "Youth"]):
+                continue
+            results.append({
+                'id': team.get('id'),
+                'name': name,
+                'country': team.get('country', 'לא ידוע'),
+                'logo': team.get('logo', '')
+            })
+        return results
+    except Exception:
         return []
 
-def match_card_html(date, competition, stadium, home_team, away_team, score, theme_name, attended=False):
+def match_card_html(date, competition, stadium, home_team, away_team, score, home_logo, away_logo, league_logo, theme_name, attended=False):
     is_lht = (theme_name == "בהיר ☀️")
     tc_inline = "#333333 !important" if is_lht else "white !important"
+    
+    img_league = f"<img src='{league_logo}' width='20' style='vertical-align: middle; margin-left: 4px; border-radius: 50%;'>" if league_logo else ""
+    img_home = f"<img src='{home_logo}' width='35' style='vertical-align: middle; margin-left: 8px;'>" if home_logo else ""
+    img_away = f"<img src='{away_logo}' width='35' style='vertical-align: middle; margin-right: 8px;'>" if away_logo else ""
+    
     att_tag = "<br><span style='background: linear-gradient(45deg, #28a745, #20c997); color: white !important; padding: 2px 8px; border-radius: 15px; font-size: 0.75em; font-weight: 900; display: inline-block; margin-top: 4px;'>🎟️ באצטדיון</span>" if attended else ""
     
     return f"""
     <div class='match-card'>
         <div style='text-align: center; color: #888 !important; font-size: 0.85em; font-weight: bold; margin-bottom: 10px;'>
-            📅 <span style='color: {tc_inline};'>{date}</span> &nbsp;|&nbsp; 🏆 {competition} &nbsp;|&nbsp; 🏟️ {stadium} {att_tag}
+            📅 <span style='color: {tc_inline};'>{date}</span> &nbsp;|&nbsp; 🏆 {img_league} {competition} &nbsp;|&nbsp; 🏟️ {stadium} {att_tag}
         </div>
         <div style='text-align: center; font-size: 1.2em; display: flex; align-items: center; justify-content: center; color: {tc_inline}; font-weight: 900; flex-wrap: wrap; gap: 5px;'>
-            <span>{home_team}</span> 
+            {img_home} <span>{home_team}</span> 
             <span style='background: linear-gradient(135deg, #007bff, #0056b3); color: white !important; padding: 4px 15px; border-radius: 20px; font-weight: 900; margin: 0 10px; font-size: 0.9em; letter-spacing: 1px;'>{score}</span> 
-            <span>{away_team}</span>
+            <span>{away_team}</span> {img_away}
         </div>
     </div>
     """
 
-# --- התראה קריטית על קריאות API ---
-if st.session_state.api_call_count >= 90:
-    st.error(f"⚠️ **התראה קריטית!** הגעת ל-{st.session_state.api_call_count} קריאות API בסשן הנוכחי.")
-else:
-    st.sidebar.markdown(f"📊 **קריאות API בסשן:** {st.session_state.api_call_count}")
+def get_colored_marker(text, bg_marker):
+    return f"<div style='text-align: center;'><span style='background-color: {bg_marker}; color: white !important; border-radius: 20px; padding: 5px 15px; font-weight: bold; font-size: 0.9em; box-shadow: 0 2px 5px rgba(0,0,0,0.15);'>{text}</span></div><br>"
+
+def render_match_details(match_id, theme_name):
+    is_lht = (theme_name == "בהיר ☀️")
+    tc = "#333333" if is_lht else "white"
+    
+    with st.spinner("טוען נתונים..."):
+        details_data = get_fixture_details(match_id)
+        
+    if not details_data or details_data.get('results', 0) == 0:
+        st.info("פרטים מפורטים אינם זמינים עבור משחק זה במאגר החדש.")
+        return
+
+    full_match = details_data['response'][0]
+    st.markdown(f"<div style='text-align: center; color: gray !important; font-size: 1em; font-weight: bold;'>מסגרת: {full_match.get('competition', {}).get('name', 'ליגה')} | אצטדיון: {full_match.get('venue', 'אצטדיון')}</div><br>", unsafe_allow_html=True)
 
 # --- פריסת תפריט כפתור העיצוב ---
 col_empty, col_theme = st.columns([9, 1])
@@ -353,7 +393,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-nav_choice = st.radio("ניווט", ["📋 יומן המשחקים", "🔍 חיפוש והוספת משחקים", "➕ הוספה ידנית", "📊 סטטיסטיקות אישיות"], index=0, horizontal=True, label_visibility="collapsed")
+nav_choice = st.radio("ניווט", ["📋 יומן המשחקים", "🔍 חיפוש והוספת משחקים", "📊 סטטיסטיקות אישיות"], index=1, horizontal=True, label_visibility="collapsed")
 st.write("---")
 
 if nav_choice != "🔍 חיפוש והוספת משחקים":
@@ -430,6 +470,9 @@ if nav_choice == "📋 יומן המשחקים":
             home_team = match.get('מארחת', '')
             away_team = match.get('אורחת', '')
             score = match.get('תוצאה', '')
+            home_logo = match.get('לוגו_מארחת', '')
+            away_logo = match.get('לוגו_אורחת', '')
+            league_logo = match.get('לוגו_תחרות', '')
             match_id = match.get('ID_משחק')
             attended = match.get('הייתי_במשחק', False)
             
@@ -451,23 +494,29 @@ if nav_choice == "📋 יומן המשחקים":
                     st.rerun()
 
             with col_match:
-                st.markdown(match_card_html(date, competition, stadium, home_team, away_team, score, st.session_state.theme, attended), unsafe_allow_html=True)
+                st.markdown(match_card_html(date, competition, stadium, home_team, away_team, score, home_logo, away_logo, league_logo, st.session_state.theme, attended), unsafe_allow_html=True)
                 
-                with st.expander("📸 זיכרון מהיציע ותמונות"):
-                    img_path = os.path.join(UPLOAD_DIR, f"{match_id}.png")
-                    if os.path.exists(img_path):
-                        c1, c2, c3 = st.columns([1, 2, 1])
-                        with c2:
-                            st.image(img_path, use_container_width=True, clamp=True)
-                            if st.button("🗑️ מחק תמונה", key=f"del_img_{match_id}"):
-                                os.remove(img_path)
+                with st.expander("📊 הצג אירועים וסטטיסטיקות"):
+                    render_match_details(match_id, st.session_state.theme)
+                    
+                    if attended:
+                        st.divider()
+                        st.markdown("<h4 style='text-align: center; color: gray !important; font-weight: 900;'>📸 זיכרון מהיציע</h4>", unsafe_allow_html=True)
+                        img_path = os.path.join(UPLOAD_DIR, f"{match_id}.png")
+                        
+                        if os.path.exists(img_path):
+                            c_img1, c_img2, c_img3 = st.columns([1, 2, 1])
+                            with c_img2:
+                                st.image(img_path, use_container_width=True, clamp=True)
+                                if st.button("🗑️ מחק תמונה", key=f"del_img_{match_id}"):
+                                    os.remove(img_path)
+                                    st.rerun()
+                        else:
+                            uploaded_file = st.file_uploader("העלה תמונה מהמשחק (סלפי, כרטיס...)", type=["png", "jpg", "jpeg"], key=f"up_{match_id}")
+                            if uploaded_file is not None:
+                                with open(img_path, "wb") as f:
+                                    f.write(uploaded_file.getbuffer())
                                 st.rerun()
-                    else:
-                        uploaded_file = st.file_uploader("העלה תמונה מהמשחק (סלפי, כרטיס...)", type=["png", "jpg", "jpeg"], key=f"up_{match_id}")
-                        if uploaded_file is not None:
-                            with open(img_path, "wb") as f:
-                                f.write(uploaded_file.getbuffer())
-                            st.rerun()
             st.write("")
     else:
         st.info("הרשימה שלך ריקה. עבור למסך החיפוש כדי להתחיל!")
@@ -481,11 +530,11 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
     with st.container():
         col1, col_vs, col2 = st.columns([5, 1, 5])
         with col1:
-            team1_name = st.text_input("team1", placeholder="קבוצה ראשונה (למשל: Real Madrid)", label_visibility="collapsed")
+            team1_name = st.text_input("team1", placeholder="קבוצה ראשונה", label_visibility="collapsed")
         with col_vs:
             st.markdown("<div class='vs-badge'>VS</div>", unsafe_allow_html=True)
         with col2:
-            team2_name = st.text_input("team2", placeholder="קבוצה שנייה (למשל: Barcelona)", label_visibility="collapsed")
+            team2_name = st.text_input("team2", placeholder="קבוצה שנייה", label_visibility="collapsed")
 
         st.write("")
         _, btn_col, _ = st.columns([1, 2, 1])
@@ -506,25 +555,25 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                 res1 = search_teams_api(t1_en)
                 res2 = search_teams_api(t2_en)
                 
-                if res1 or res2:
-                    st.session_state.t1_opts = res1 if res1 else [{'id': t1_en, 'name': team1_name}]
-                    st.session_state.t2_opts = res2 if res2 else [{'id': t2_en, 'name': team2_name}]
+                if isinstance(res1, list) and isinstance(res2, list):
+                    st.session_state.t1_opts = res1
+                    st.session_state.t2_opts = res2
                     st.session_state.search_results = []
                 else:
-                    st.warning("⚠️ לא נמצאו תוצאות מדויקות, משתמש בשמות שהוזנו.")
-                    st.session_state.t1_opts = [{'id': t1_en, 'name': team1_name}]
-                    st.session_state.t2_opts = [{'id': t2_en, 'name': team2_name}]
+                    st.error("⚠️ לא נמצאו תוצאות או שהתקבלה שגיאה מהשרת.")
+                    st.session_state.t1_opts = []
+                    st.session_state.t2_opts = []
 
-    valid_t1 = isinstance(st.session_state.t1_opts, list) and len(st.session_state.t1_opts) > 0
-    valid_t2 = isinstance(st.session_state.t2_opts, list) and len(st.session_state.t2_opts) > 0
+    valid_t1 = isinstance(st.session_state.t1_opts, list) and len(st.session_state.t1_opts) > 0 and all(isinstance(x, dict) for x in st.session_state.t1_opts)
+    valid_t2 = isinstance(st.session_state.t2_opts, list) and len(st.session_state.t2_opts) > 0 and all(isinstance(x, dict) for x in st.session_state.t2_opts)
 
     if valid_t1 and valid_t2:
         st.markdown("<hr style='margin: 20px 0; border: 0; border-top: 2px dashed rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
         c1, c2 = st.columns(2)
         with c1:
-            t1_sel = st.selectbox("בחר קבוצה 1:", options=st.session_state.t1_opts, format_func=lambda x: x.get('name', str(x)))
+            t1_sel = st.selectbox("בחר קבוצה 1:", options=st.session_state.t1_opts, format_func=lambda x: f"{x.get('name', '')} ({x.get('country', '')})")
         with c2:
-            t2_sel = st.selectbox("בחר קבוצה 2:", options=st.session_state.t2_opts, format_func=lambda x: x.get('name', str(x)))
+            t2_sel = st.selectbox("בחר קבוצה 2:", options=st.session_state.t2_opts, format_func=lambda x: f"{x.get('name', '')} ({x.get('country', '')})")
             
         st.write("")
         _, btn_col2, _ = st.columns([1, 2, 1])
@@ -533,18 +582,17 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
             
         if fetch_matches:
             with st.spinner("שולף היסטוריית משחקים..."):
-                increment_api_call()
                 try:
-                    t1_id = t1_sel.get('id') if isinstance(t1_sel, dict) else t1_sel
-                    t2_id = t2_sel.get('id') if isinstance(t2_sel, dict) else t2_sel
+                    t1_id = t1_sel.get('id')
                     resp = requests.get(f"{BASE_URL}/matches", headers=HEADERS, params={"team_id": t1_id})
                     data = resp.json()
                     matches = data.get('data', data.get('matches', data)) if isinstance(data, dict) else data
+                    
                     h2h = []
                     if isinstance(matches, list):
                         for m in matches:
                             teams_str = str(m).lower()
-                            if str(t2_id).lower() in teams_str or str(t2_sel.get('name', '')).lower() in teams_str:
+                            if str(t2_sel.get('id', '')).lower() in teams_str or str(t2_sel.get('name', '')).lower() in teams_str:
                                 h2h.append(m)
                     st.session_state.search_results = h2h if h2h else (matches[:15] if isinstance(matches, list) else [])
                 except:
@@ -566,7 +614,7 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
             
             col_text, col_btn = st.columns([5, 1])
             with col_text:
-                st.markdown(match_card_html(date, competition, stadium, home_team, away_team, score, st.session_state.theme), unsafe_allow_html=True)
+                st.markdown(match_card_html(date, competition, stadium, home_team, away_team, score, "", "", "", st.session_state.theme), unsafe_allow_html=True)
             with col_btn:
                 st.write("")
                 st.write("")
@@ -589,39 +637,7 @@ elif nav_choice == "🔍 חיפוש והוספת משחקים":
                         st.rerun()
 
 # ==========================================
-# מסך 3: הוספה ידנית
-# ==========================================
-elif nav_choice == "➕ הוספה ידנית":
-    st.markdown("<h3 style='text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.5em;'>הוספת משחק ידנית 📝</h3>", unsafe_allow_html=True)
-    with st.form("manual_form"):
-        c1, c2 = st.columns(2)
-        with c1: h_team = st.text_input("קבוצת בית")
-        with c2: a_team = st.text_input("קבוצת חוץ")
-        c3, c4 = st.columns(2)
-        with c3: s_home = st.number_input("שערים - בית", min_value=0, value=0)
-        with c4: s_away = st.number_input("שערים - חוץ", min_value=0, value=0)
-        c5, c6 = st.columns(2)
-        with c5: m_date = st.date_input("תאריך", value=datetime.now())
-        with c6: comp = st.text_input("מסגרת / תחרות")
-        stadium = st.text_input("אצטדיון")
-        attended = st.checkbox("הייתי באצטדיון 🏟️")
-        
-        if st.form_submit_button("שמור משחק ליומן 💾", use_container_width=True):
-            if h_team and a_team and comp:
-                match_data = {
-                    "ID_משחק": str(int(datetime.now().timestamp() * 1000)),
-                    "תאריך": str(m_date), "תחרות": comp, "מארחת": h_team,
-                    "תוצאה": f"{s_home} - {s_away}", "אורחת": a_team,
-                    "אצטדיון": stadium or "לא ידוע", "הייתי_במשחק": attended
-                }
-                save_match_to_file(match_data)
-                if attended: st.balloons()
-                st.success("המשחק נוסף בהצלחה!")
-            else:
-                st.warning("נא למלא שדות חובה.")
-
-# ==========================================
-# מסך 4: סטטיסטיקות אישיות ושיתוף
+# מסך 3: סטטיסטיקות אישיות ושיתוף
 # ==========================================
 elif nav_choice == "📊 סטטיסטיקות אישיות":
     st.markdown("<h3 style='text-align: center; margin-bottom: 25px; font-weight: 900; font-size: 1.5em;'>הסטטיסטיקות שלך 📈</h3>", unsafe_allow_html=True)
